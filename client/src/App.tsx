@@ -457,7 +457,7 @@ export function ChessApp() {
       </div>
 
       {/* Main Viewport Content Area (locked height, zero outer scroll) */}
-      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-2 sm:p-3 flex flex-col gap-2 overflow-hidden">
+      <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col gap-2 overflow-hidden">
         {/* Game Title Bar */}
         <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
           <div className="flex items-center space-x-2 text-xs">
@@ -472,8 +472,8 @@ export function ChessApp() {
         {/* Tab 1: Analysis Board */}
         {activeTab === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
-            {/* Left: Interactive Board & Controls (7 Cols on desktop for hero presentation) */}
-            <div className="lg:col-span-7 h-full flex flex-col min-h-0">
+            {/* Left: Interactive Board & Controls (6 Cols) */}
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0">
               <InteractiveBoard
                 game={chessInstance}
                 isFlipped={isFlipped}
@@ -508,8 +508,8 @@ export function ChessApp() {
               />
             </div>
 
-            {/* Right: Master Unified Analysis Panel (5 Cols) */}
-            <div className="lg:col-span-5 h-full flex flex-col min-h-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden select-none">
+            {/* Right: Master Unified Analysis Panel (6 Cols) */}
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden select-none">
               {/* Integrated Panel Header: Telemetry + Action + Tabs */}
               <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 shrink-0">
                 {/* Row 1: Stockfish 19 Engine Strip */}
@@ -805,7 +805,7 @@ export function ChessApp() {
         {activeTab === 'review' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
             {/* Left: Interactive Board */}
-            <div className="lg:col-span-7 h-full flex flex-col min-h-0">
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0">
               <InteractiveBoard
                 game={chessInstance}
                 scoreCp={activeScoreCp}
@@ -838,7 +838,7 @@ export function ChessApp() {
             </div>
 
             {/* Right: CheckMate AI Game Review Panel */}
-            <div className="lg:col-span-5 h-full flex flex-col min-h-0 overflow-hidden">
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0 overflow-hidden">
               <GameReviewPanel
                 analyses={analyses}
                 currentPly={currentPly}
