@@ -22,6 +22,12 @@ interface InteractiveBoardProps {
   bestMove?: string; // e.g. "e2e4" or "Nf3"
   secondaryMoves?: string[];
   currentAnalysis?: MoveAnalysis;
+  players?: {
+    white: string;
+    black: string;
+    whiteElo?: string;
+    blackElo?: string;
+  };
   onMakeMove: (sourceSquare: string, targetSquare: string) => boolean;
   onFirst: () => void;
   onPrev: () => void;
@@ -79,6 +85,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
   bestMove,
   secondaryMoves,
   currentAnalysis,
+  players,
   onMakeMove,
   onFirst,
   onPrev,
@@ -93,6 +100,17 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [showBestMoveArrow, setShowBestMoveArrow] = useState<boolean>(true);
+
+  // Player orientation and names
+  const topIsWhite = isFlipped;
+  const topPlayerName = topIsWhite ? (players?.white || 'White') : (players?.black || 'Black');
+  const topPlayerElo = topIsWhite ? players?.whiteElo : players?.blackElo;
+  const isTopTurn = (topIsWhite && game.turn() === 'w') || (!topIsWhite && game.turn() === 'b');
+
+  const bottomIsWhite = !isFlipped;
+  const bottomPlayerName = bottomIsWhite ? (players?.white || 'White') : (players?.black || 'Black');
+  const bottomPlayerElo = bottomIsWhite ? players?.whiteElo : players?.blackElo;
+  const isBottomTurn = (bottomIsWhite && game.turn() === 'w') || (!bottomIsWhite && game.turn() === 'b');
 
   // Calculate captured pieces
   const capturedWhite: PieceSymbol[] = [];
@@ -206,11 +224,25 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
     <div className="flex flex-col h-full justify-between select-none min-h-0 gap-1.5">
       {/* Top Player & Captured pieces */}
       <div className="flex items-center justify-between px-1 text-xs py-0.5 shrink-0">
-        <div className="flex items-center space-x-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-500 dark:bg-slate-400 border border-slate-400 dark:border-slate-600 shadow-2xs" />
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
-            {isFlipped ? 'White' : 'Black'}
-          </span>
+        <div className="flex items-center space-x-2 min-w-0">
+          <div
+            className={`w-3 h-3 rounded-full shrink-0 shadow-2xs transition-all ${
+              topIsWhite
+                ? 'bg-slate-100 border border-slate-300'
+                : 'bg-slate-800 dark:bg-slate-900 border border-slate-600'
+            } ${isTopTurn ? 'ring-2 ring-sky-400 ring-offset-1 ring-offset-transparent' : ''}`}
+            title={`${topIsWhite ? 'White' : 'Black'}${isTopTurn ? ' (To move)' : ''}`}
+          />
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[140px] sm:max-w-[200px]">
+              {topPlayerName}
+            </span>
+            {topPlayerElo && (
+              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.2 rounded font-semibold shrink-0">
+                {topPlayerElo}
+              </span>
+            )}
+          </div>
           <CapturedPieces
             captured={isFlipped ? capturedWhite : capturedBlack}
             advantage={isFlipped ? whiteAdvantage : blackAdvantage}
@@ -218,7 +250,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
           />
         </div>
         {game.inCheck() && game.turn() === (isFlipped ? 'w' : 'b') && (
-          <span className="text-red-600 dark:text-red-400 font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800 animate-pulse text-[10px]">
+          <span className="text-red-600 dark:text-red-400 font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800 animate-pulse text-[10px] shrink-0">
             CHECK
           </span>
         )}
@@ -287,11 +319,25 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
 
       {/* Bottom Player & Captured pieces */}
       <div className="flex items-center justify-between px-1 text-xs py-0.5 shrink-0">
-        <div className="flex items-center space-x-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-400 dark:border-slate-300 shadow-2xs" />
-          <span className="font-semibold text-slate-900 dark:text-slate-200">
-            {isFlipped ? 'Black' : 'White'}
-          </span>
+        <div className="flex items-center space-x-2 min-w-0">
+          <div
+            className={`w-3 h-3 rounded-full shrink-0 shadow-2xs transition-all ${
+              bottomIsWhite
+                ? 'bg-slate-100 border border-slate-300'
+                : 'bg-slate-800 dark:bg-slate-900 border border-slate-600'
+            } ${isBottomTurn ? 'ring-2 ring-sky-400 ring-offset-1 ring-offset-transparent' : ''}`}
+            title={`${bottomIsWhite ? 'White' : 'Black'}${isBottomTurn ? ' (To move)' : ''}`}
+          />
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="font-bold text-slate-900 dark:text-white text-xs truncate max-w-[140px] sm:max-w-[200px]">
+              {bottomPlayerName}
+            </span>
+            {bottomPlayerElo && (
+              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.2 rounded font-semibold shrink-0">
+                {bottomPlayerElo}
+              </span>
+            )}
+          </div>
           <CapturedPieces
             captured={isFlipped ? capturedBlack : capturedWhite}
             advantage={isFlipped ? blackAdvantage : whiteAdvantage}
@@ -299,7 +345,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
           />
         </div>
         {game.inCheck() && game.turn() === (isFlipped ? 'b' : 'w') && (
-          <span className="text-red-600 dark:text-red-400 font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800 animate-pulse text-[10px]">
+          <span className="text-red-600 dark:text-red-400 font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/40 border border-red-300 dark:border-red-800 animate-pulse text-[10px] shrink-0">
             CHECK
           </span>
         )}

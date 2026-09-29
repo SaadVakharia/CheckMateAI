@@ -222,9 +222,17 @@ export function ChessApp() {
       if (title) setGameTitle(title);
 
       const headers = tempGame.header();
+      let whitePlayer = headers['White'];
+      let blackPlayer = headers['Black'];
+      if ((!whitePlayer || whitePlayer === 'White' || whitePlayer === '?') && title && title.includes(' vs ')) {
+        const parts = title.split(' vs ');
+        whitePlayer = parts[0]?.trim() || whitePlayer;
+        blackPlayer = parts[1]?.trim() || blackPlayer;
+      }
+
       setPlayers({
-        white: headers['White'] || 'White',
-        black: headers['Black'] || 'Black',
+        white: whitePlayer || 'White',
+        black: blackPlayer || 'Black',
         whiteElo: headers['WhiteElo'] || undefined,
         blackElo: headers['BlackElo'] || undefined,
       });
@@ -475,6 +483,7 @@ export function ChessApp() {
                 bestMove={currentPositionBestMove}
                 secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
                 currentAnalysis={currentAnalysis}
+                players={players}
                 onRetryMove={() => {
                   if (currentPly > 0) {
                     goToPly(currentPly - 1);
@@ -557,6 +566,7 @@ export function ChessApp() {
                 totalPlies={analyses.length}
                 isPlaying={isPlaying}
                 isMuted={isMuted}
+                players={players}
                 onRetryMove={() => {
                   if (currentPly > 0) goToPly(currentPly - 1);
                 }}
