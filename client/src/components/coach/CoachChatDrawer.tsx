@@ -45,7 +45,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
     coachPersona: 'Grandmaster Alex',
   });
   const [autoExplanation, setAutoExplanation] = useState<CoachExplanation | null>(null);
-  const [showMoveCommentary, setShowMoveCommentary] = useState<boolean>(true);
+  const [showMoveCommentary, setShowMoveCommentary] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevPlyRef = useRef<number | null>(null);
@@ -322,9 +322,15 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
               {autoExplanation && (
                 <button
                   onClick={() => setShowMoveCommentary(!showMoveCommentary)}
-                  className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20"
+                  className={`text-[10px] font-semibold transition cursor-pointer px-1.5 py-0.5 rounded border flex items-center gap-1 ${
+                    showMoveCommentary
+                      ? 'bg-sky-500/20 text-sky-600 dark:text-sky-300 border-sky-500/40'
+                      : 'bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/25'
+                  }`}
+                  title={showMoveCommentary ? 'Hide GM explanation' : 'Show GM move explanation'}
                 >
-                  {showMoveCommentary ? 'Collapse' : 'Explain'}
+                  <Lightbulb className="w-2.5 h-2.5" />
+                  <span>{showMoveCommentary ? 'Hide' : 'Insight'}</span>
                 </button>
               )}
             </div>
@@ -332,11 +338,11 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
 
           {/* AI Coach Tactical Commentary (compact with scroll limit) */}
           {autoExplanation && showMoveCommentary && (
-            <div className="text-[11px] text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-2xs leading-relaxed max-h-24 overflow-y-auto space-y-1">
-              <p className="font-medium text-[11px]">{autoExplanation.commentary}</p>
+            <div className="text-[10.5px] text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-slate-800/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-2xs leading-relaxed max-h-20 overflow-y-auto space-y-0.5 animate-fadeIn">
+              <p className="font-medium text-[10.5px]">{autoExplanation.commentary}</p>
               {autoExplanation.keyTacticalIdea && (
-                <div className="flex items-start gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-400 pt-0.5">
-                  <Lightbulb className="w-3 h-3 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-1 text-[10px] font-medium text-sky-600 dark:text-sky-400 pt-0.5">
+                  <Lightbulb className="w-2.5 h-2.5 shrink-0 mt-0.5" />
                   <span>{autoExplanation.keyTacticalIdea}</span>
                 </div>
               )}

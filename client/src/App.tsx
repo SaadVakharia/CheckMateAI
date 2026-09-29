@@ -457,58 +457,61 @@ export function ChessApp() {
       </div>
 
       {/* Main Viewport Content Area (locked height, zero outer scroll) */}
-      <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col gap-2 overflow-hidden">
-        {/* Game Title Bar */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-medium">Match:</span>
-            <span className="font-bold text-slate-900 dark:text-white tracking-wide truncate max-w-[280px] sm:max-w-md">{gameTitle}</span>
-          </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
-            {analyses.length} moves • {blunderList.length} blunders
-          </div>
-        </div>
-
+      <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col overflow-hidden">
         {/* Tab 1: Analysis Board */}
         {activeTab === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
-            {/* Left: Interactive Board & Controls (6 Cols) */}
-            <div className="lg:col-span-6 h-full flex flex-col min-h-0">
-              <InteractiveBoard
-                game={chessInstance}
-                isFlipped={isFlipped}
-                scoreCp={activeScoreCp}
-                mate={liveEvaluation.mate}
-                currentPly={currentPly}
-                totalPlies={analyses.length}
-                isPlaying={isPlaying}
-                isMuted={isMuted}
-                bestMove={currentPositionBestMove}
-                secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
-                currentAnalysis={currentAnalysis}
-                players={players}
-                showCoachFeedbackBar={false}
-                onRetryMove={() => {
-                  if (currentPly > 0) {
-                    goToPly(currentPly - 1);
-                  }
-                }}
-                onMakeMove={handleMakeMove}
-                onFirst={() => goToPly(0)}
-                onPrev={() => goToPly(currentPly - 1)}
-                onNext={() => goToPly(currentPly + 1)}
-                onLast={() => goToPly(analyses.length)}
-                onTogglePlay={() => setIsPlaying(!isPlaying)}
-                onFlipBoard={() => setIsFlipped(!isFlipped)}
-                onToggleMute={() => {
-                  const next = !isMuted;
-                  setIsMuted(next);
-                  sounds.setMuted(next);
-                }}
-              />
+            {/* Left: Match Info + Interactive Board & Controls (6 Cols) */}
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0 gap-1.5">
+              {/* Game Title Bar (Confined to Left Side Width) */}
+              <div className="flex items-center justify-between px-3 py-1 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
+                <div className="flex items-center space-x-2 text-xs min-w-0">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Match:</span>
+                  <span className="font-bold text-slate-900 dark:text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">{gameTitle}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  {analyses.length} moves • {blunderList.length} blunders
+                </div>
+              </div>
+
+              {/* Interactive Board */}
+              <div className="flex-1 min-h-0">
+                <InteractiveBoard
+                  game={chessInstance}
+                  isFlipped={isFlipped}
+                  scoreCp={activeScoreCp}
+                  mate={liveEvaluation.mate}
+                  currentPly={currentPly}
+                  totalPlies={analyses.length}
+                  isPlaying={isPlaying}
+                  isMuted={isMuted}
+                  bestMove={currentPositionBestMove}
+                  secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
+                  currentAnalysis={currentAnalysis}
+                  players={players}
+                  showCoachFeedbackBar={false}
+                  onRetryMove={() => {
+                    if (currentPly > 0) {
+                      goToPly(currentPly - 1);
+                    }
+                  }}
+                  onMakeMove={handleMakeMove}
+                  onFirst={() => goToPly(0)}
+                  onPrev={() => goToPly(currentPly - 1)}
+                  onNext={() => goToPly(currentPly + 1)}
+                  onLast={() => goToPly(analyses.length)}
+                  onTogglePlay={() => setIsPlaying(!isPlaying)}
+                  onFlipBoard={() => setIsFlipped(!isFlipped)}
+                  onToggleMute={() => {
+                    const next = !isMuted;
+                    setIsMuted(next);
+                    sounds.setMuted(next);
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Right: Master Unified Analysis Panel (6 Cols) */}
+            {/* Right: Master Unified Analysis Panel (6 Cols, extends to the very top!) */}
             <div className="lg:col-span-6 h-full flex flex-col min-h-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden select-none">
               {/* Integrated Panel Header: Telemetry + Action + Tabs */}
               <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 shrink-0">
@@ -804,37 +807,50 @@ export function ChessApp() {
         {/* Tab 2: Game Review (Side-by-Side Board & Chess.com Game Review Sidebar) */}
         {activeTab === 'review' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
-            {/* Left: Interactive Board */}
-            <div className="lg:col-span-6 h-full flex flex-col min-h-0">
-              <InteractiveBoard
-                game={chessInstance}
-                scoreCp={activeScoreCp}
-                mate={liveEvaluation.mate}
-                isFlipped={isFlipped}
-                bestMove={currentPositionBestMove}
-                secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
-                currentAnalysis={currentAnalysis}
-                currentPly={currentPly}
-                totalPlies={analyses.length}
-                isPlaying={isPlaying}
-                isMuted={isMuted}
-                players={players}
-                onRetryMove={() => {
-                  if (currentPly > 0) goToPly(currentPly - 1);
-                }}
-                onMakeMove={handleMakeMove}
-                onFirst={() => goToPly(0)}
-                onPrev={() => goToPly(currentPly - 1)}
-                onNext={() => goToPly(currentPly + 1)}
-                onLast={() => goToPly(analyses.length)}
-                onTogglePlay={() => setIsPlaying(!isPlaying)}
-                onFlipBoard={() => setIsFlipped(!isFlipped)}
-                onToggleMute={() => {
-                  const next = !isMuted;
-                  setIsMuted(next);
-                  sounds.setMuted(next);
-                }}
-              />
+            {/* Left: Match Info + Interactive Board */}
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0 gap-1.5">
+              {/* Compact Match Header */}
+              <div className="flex items-center justify-between px-3 py-1 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
+                <div className="flex items-center space-x-2 text-xs min-w-0">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Match:</span>
+                  <span className="font-bold text-slate-900 dark:text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">{gameTitle}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  {analyses.length} moves • {blunderList.length} blunders
+                </div>
+              </div>
+
+              <div className="flex-1 min-h-0">
+                <InteractiveBoard
+                  game={chessInstance}
+                  scoreCp={activeScoreCp}
+                  mate={liveEvaluation.mate}
+                  isFlipped={isFlipped}
+                  bestMove={currentPositionBestMove}
+                  secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
+                  currentAnalysis={currentAnalysis}
+                  currentPly={currentPly}
+                  totalPlies={analyses.length}
+                  isPlaying={isPlaying}
+                  isMuted={isMuted}
+                  players={players}
+                  onRetryMove={() => {
+                    if (currentPly > 0) goToPly(currentPly - 1);
+                  }}
+                  onMakeMove={handleMakeMove}
+                  onFirst={() => goToPly(0)}
+                  onPrev={() => goToPly(currentPly - 1)}
+                  onNext={() => goToPly(currentPly + 1)}
+                  onLast={() => goToPly(analyses.length)}
+                  onTogglePlay={() => setIsPlaying(!isPlaying)}
+                  onFlipBoard={() => setIsFlipped(!isFlipped)}
+                  onToggleMute={() => {
+                    const next = !isMuted;
+                    setIsMuted(next);
+                    sounds.setMuted(next);
+                  }}
+                />
+              </div>
             </div>
 
             {/* Right: CheckMate AI Game Review Panel */}
