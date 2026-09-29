@@ -39,4 +39,6 @@ Thumbs.db
 *.sw?
 
 # IDE & AI agents local directories
-.agents/
+.agents/*
+!.agents/rules/
+!.agents/rules/*

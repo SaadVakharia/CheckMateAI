@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onChangeTab('board')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'board'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
             }`}
           >
@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onChangeTab('review')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'review'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
             }`}
           >
@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onChangeTab('puzzles')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'puzzles'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
             }`}
           >
@@ -84,9 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={onOpenSync}
             title="1-Click Sync Chess.com / Lichess"
-            className="px-3 py-1.5 bg-emerald-50 dark:bg-slate-900 hover:bg-emerald-100 dark:hover:bg-slate-800 border border-emerald-200 dark:border-slate-700/80 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="px-3 py-1.5 bg-blue-50 dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-sky-400 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
             <span className="hidden sm:inline">Sync Match</span>
           </button>
 

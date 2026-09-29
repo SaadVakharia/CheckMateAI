@@ -73,7 +73,7 @@ export const MoveControls: React.FC<MoveControlsProps> = ({
     <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm transition-colors">
       {/* Quick ply indicator */}
       <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-        Ply <span className="text-emerald-600 dark:text-emerald-400 font-bold">{currentPly}</span> / {totalPlies}
+        Ply <span className="text-sky-600 dark:text-sky-400 font-bold">{currentPly}</span> / {totalPlies}
       </div>
 
       {/* Main navigation controls */}
@@ -99,7 +99,7 @@ export const MoveControls: React.FC<MoveControlsProps> = ({
         <button
           onClick={onTogglePlay}
           title="Autoplay (Spacebar)"
-          className="p-2 text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-md transition cursor-pointer"
+          className="p-2 text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-md shadow-blue-500/20 transition cursor-pointer"
         >
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
         </button>

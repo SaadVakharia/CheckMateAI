@@ -81,7 +81,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
               <Globe className="w-4 h-4" />
             </div>
             <div>
@@ -106,7 +106,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
             }}
             className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'chesscom'
-                ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                ? 'border-blue-600 text-blue-600 dark:border-sky-500 dark:text-sky-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -120,7 +120,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
             }}
             className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'lichess'
-                ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                ? 'border-blue-600 text-blue-600 dark:border-sky-500 dark:text-sky-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -134,7 +134,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
             }}
             className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'classics'
-                ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                ? 'border-blue-600 text-blue-600 dark:border-sky-500 dark:text-sky-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -156,13 +156,13 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleFetch()}
                     placeholder={`Enter ${activeTab === 'chesscom' ? 'Chess.com' : 'Lichess'} username (e.g. hikaru, magnuscarlsen)...`}
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs pl-9 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 placeholder-slate-400 dark:placeholder-slate-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs pl-9 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-sky-500 placeholder-slate-400 dark:placeholder-slate-500"
                   />
                 </div>
                 <button
                   onClick={handleFetch}
                   disabled={loading || !username.trim()}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2 cursor-pointer"
                 >
                   {loading ? <RotateCw className="w-4 h-4 animate-spin" /> : 'Fetch Games'}
                 </button>
@@ -182,10 +182,10 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                       <img
                         src={profile.avatar}
                         alt={profile.username}
-                        className="w-12 h-12 rounded-full border border-emerald-500/40 object-cover"
+                        className="w-12 h-12 rounded-full border border-sky-500/40 object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-lg">
+                      <div className="w-12 h-12 rounded-full bg-sky-500/20 text-sky-600 dark:text-sky-400 font-bold flex items-center justify-center text-lg">
                         {profile.username[0].toUpperCase()}
                       </div>
                     )}
@@ -207,7 +207,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                     {profile.ratingRapid && (
                       <div className="text-center">
                         <div className="text-slate-500 dark:text-slate-400 text-[10px]">Rapid</div>
-                        <div className="font-bold text-emerald-600 dark:text-emerald-400">{profile.ratingRapid}</div>
+                        <div className="font-bold text-sky-600 dark:text-sky-400">{profile.ratingRapid}</div>
                       </div>
                     )}
                     {profile.ratingBlitz && (
@@ -261,7 +261,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                             onSelectGame(g.pgn, `${g.white.username} vs ${g.black.username}`);
                             onClose();
                           }}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-sm shadow-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Analyze
                         </button>
@@ -287,7 +287,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white">{game.title}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{game.subtitle}</p>
                       <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{game.white.username} ({game.white.rating})</span>
+                        <span className="text-sky-600 dark:text-sky-400 font-semibold">{game.white.username} ({game.white.rating})</span>
                         <span>vs</span>
                         <span className="text-slate-700 dark:text-slate-300 font-semibold">{game.black.username} ({game.black.rating})</span>
                         <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white font-bold ml-2">
@@ -301,7 +301,7 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
                         onSelectGame(game.pgn, game.title);
                         onClose();
                       }}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm shadow-blue-500/20 transition cursor-pointer"
                     >
                       Load Match
                     </button>

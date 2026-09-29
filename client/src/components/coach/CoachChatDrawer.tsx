@@ -240,13 +240,13 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
       {/* Header Bar */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+          <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-bold text-xs">
             <Bot className="w-4 h-4" />
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>{coachStatus.coachPersona}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
             </h3>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {coachStatus.hasApiKey ? 'Powered by Gemini AI' : 'Live Grandmaster Pedagogy'}
@@ -267,7 +267,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
               title={voiceEnabled ? 'Mute Live Voice Coach' : 'Enable Live Voice Coach'}
               className={`p-1 rounded-md text-[10px] border transition cursor-pointer flex items-center gap-1 font-semibold ${
                 voiceEnabled
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -306,7 +306,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
                 currentAnalysis.deltaWinPercent < 0
                   ? 'text-rose-500'
                   : currentAnalysis.deltaWinPercent > 0
-                  ? 'text-emerald-500'
+                  ? 'text-sky-500'
                   : 'text-slate-400'
               }`}
             >
@@ -319,7 +319,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
             <div className="text-[11px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-2xs leading-relaxed space-y-1">
               <p className="font-medium">{autoExplanation.commentary}</p>
               {autoExplanation.keyTacticalIdea && (
-                <div className="flex items-start gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 pt-0.5">
+                <div className="flex items-start gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-400 pt-0.5">
                   <Lightbulb className="w-3 h-3 shrink-0 mt-0.5" />
                   <span>{autoExplanation.keyTacticalIdea}</span>
                 </div>
@@ -331,7 +331,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
           {currentAnalysis.bestMove && currentAnalysis.classification !== 'best' && currentAnalysis.classification !== 'brilliant' && (
             <div className="flex items-center space-x-1.5 text-[11px] text-slate-600 dark:text-slate-400">
               <span className="font-medium text-[10px]">Engine recommendation:</span>
-              <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-300 dark:border-emerald-500/30 flex items-center gap-1 text-[10px]">
+              <span className="font-mono font-bold text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 rounded border border-sky-300 dark:border-sky-500/30 flex items-center gap-1 text-[10px]">
                 {currentAnalysis.bestMove} <ArrowRight className="w-2.5 h-2.5" />
               </span>
             </div>
@@ -349,7 +349,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
             <div
               className={`max-w-[88%] rounded-2xl px-3 py-1.5 text-xs leading-relaxed ${
                 msg.sender === 'user'
-                  ? 'bg-emerald-600 text-white rounded-br-none shadow-2xs'
+                  ? 'bg-blue-600 text-white rounded-br-none shadow-2xs shadow-blue-500/20'
                   : msg.isAlert
                   ? 'bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-bl-none shadow-2xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-bl-none shadow-2xs'
@@ -363,7 +363,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
 
         {isThinking && (
           <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400 text-xs py-1">
-            <Zap className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 animate-bounce" />
+            <Zap className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400 animate-bounce" />
             <span className="text-[11px]">GM Alex is formulating tactical analysis...</span>
           </div>
         )}
@@ -378,7 +378,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
             onClick={() => handleSend(q)}
             className="whitespace-nowrap px-2 py-0.8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs"
           >
-            <Sparkles className="w-2.5 h-2.5 text-emerald-500" />
+            <Sparkles className="w-2.5 h-2.5 text-sky-500" />
             <span>{q}</span>
           </button>
         ))}
@@ -398,12 +398,12 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask GM Alex about this move or position..."
-            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-emerald-500 transition placeholder-slate-400 dark:placeholder-slate-500"
+            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-sky-500 transition placeholder-slate-400 dark:placeholder-slate-500"
           />
           <button
             type="submit"
             disabled={!input.trim()}
-            className="p-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white rounded-lg transition cursor-pointer shadow-xs"
+            className="p-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-lg transition cursor-pointer shadow-xs shadow-blue-500/20"
           >
             <Send className="w-3.5 h-3.5" />
           </button>

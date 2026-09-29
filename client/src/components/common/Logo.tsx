@@ -36,9 +36,9 @@ export const Logo: React.FC<LogoProps> = ({
       <div>
         <div className="flex items-center gap-1.5 leading-none">
           <span className={`font-black ${titleSize} tracking-tight text-slate-900 dark:text-white`}>
-            Check<span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400 bg-clip-text text-transparent">Mate</span>
+            Check<span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 bg-clip-text text-transparent">Mate</span>
           </span>
-          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wider">
+          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 tracking-wider">
             AI
           </span>
         </div>

@@ -105,8 +105,8 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
           options={{
             position: puzzleGame.fen(),
             boardOrientation: currentBlunder.ply % 2 === 0 ? 'black' : 'white',
-            darkSquareStyle: { backgroundColor: isDark ? '#24334a' : '#779952' },
-            lightSquareStyle: { backgroundColor: isDark ? '#cbd5e1' : '#edeed1' },
+            darkSquareStyle: { backgroundColor: isDark ? '#1e324d' : '#3e628d' },
+            lightSquareStyle: { backgroundColor: isDark ? '#d8e4f2' : '#e8f1fa' },
             animationDurationInMs: 200,
             allowDragging: true,
             onPieceDrop: ({ sourceSquare, targetSquare }) => {
@@ -149,7 +149,7 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               In this position, <span className="text-red-600 dark:text-red-400 font-bold">{currentBlunder.san}</span> was played (a blunder).
             </div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+            <div className="text-xs text-sky-600 dark:text-sky-400 font-bold">
               Find the engine's best continuation on the board!
             </div>
           </div>
@@ -163,9 +163,9 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
           )}
 
           {solved && (
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-xl space-y-1.5">
-              <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-4 bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-700/60 rounded-xl space-y-1.5">
+              <div className="flex items-center gap-2 text-sky-800 dark:text-sky-300 font-bold text-sm">
+                <CheckCircle2 className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                 <span>Solved! Brilliant find!</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300">
@@ -206,8 +206,8 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
             )}
 
             {hintLevel >= 3 && currentBlunder.bestMove && (
-              <div className="text-xs p-2.5 bg-emerald-50 dark:bg-slate-950/60 border border-emerald-300 dark:border-emerald-800/60 rounded-lg text-emerald-800 dark:text-emerald-300 font-mono">
-                <span className="text-emerald-700 dark:text-emerald-400 font-bold">Hint 3 (Best Move): </span>
+              <div className="text-xs p-2.5 bg-sky-50 dark:bg-slate-950/60 border border-sky-300 dark:border-sky-800/60 rounded-lg text-sky-800 dark:text-sky-300 font-mono">
+                <span className="text-sky-700 dark:text-sky-400 font-bold">Hint 3 (Best Move): </span>
                 Play {currentBlunder.bestMove}
               </div>
             )}
@@ -218,7 +218,7 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
         {blunders.length > 1 && (
           <button
             onClick={handleNextPuzzle}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Next Mistake Puzzle</span>
             <ArrowRight className="w-4 h-4" />

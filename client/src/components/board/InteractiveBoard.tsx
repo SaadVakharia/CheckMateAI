@@ -186,7 +186,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
-      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.4)' : 'rgba(5, 150, 105, 0.35)',
+      backgroundColor: isDark ? 'rgba(2, 132, 199, 0.45)' : 'rgba(2, 132, 199, 0.3)'
     };
   }
   legalMoves.forEach((sq) => {
@@ -195,8 +195,8 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
       background: piece
         ? 'radial-gradient(circle, rgba(239, 68, 68, 0.7) 85%, transparent 85%)'
         : isDark
-        ? 'radial-gradient(circle, rgba(16, 185, 129, 0.6) 25%, transparent 25%)'
-        : 'radial-gradient(circle, rgba(5, 150, 105, 0.7) 25%, transparent 25%)',
+        ? 'radial-gradient(circle, rgba(56, 189, 248, 0.7) 25%, transparent 25%)'
+        : 'radial-gradient(circle, rgba(2, 132, 199, 0.8) 25%, transparent 25%)',
       borderRadius: '50%',
       cursor: 'pointer',
     };
@@ -239,8 +239,8 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
               boardOrientation: isFlipped ? 'black' : 'white',
               arrows,
               squareStyles: customSquareStyles,
-              darkSquareStyle: { backgroundColor: isDark ? '#24334a' : '#779952' },
-              lightSquareStyle: { backgroundColor: isDark ? '#cbd5e1' : '#edeed1' },
+              darkSquareStyle: { backgroundColor: isDark ? '#1e324d' : '#3e628d' },
+              lightSquareStyle: { backgroundColor: isDark ? '#d8e4f2' : '#e8f1fa' },
               animationDurationInMs: 200,
               allowDragging: true,
               squareRenderer: ({ square, children }) => {
