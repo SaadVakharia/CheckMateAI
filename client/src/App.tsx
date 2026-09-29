@@ -9,10 +9,9 @@ import { GameReviewPanel } from './components/analysis/GameReviewPanel';
 import { MistakePuzzlePlayer } from './components/puzzles/MistakePuzzlePlayer';
 import { PlatformSyncModal } from './components/importer/PlatformSyncModal';
 import { PGNModal } from './components/importer/PGNModal';
-import { EngineHUD } from './components/board/EngineHUD';
 import { PRELOADED_GAMES } from './services/chessPlatforms';
 import { ClassificationBadge } from './components/common/ClassificationBadge';
-import { Activity, ListOrdered, Bot, Cpu, ArrowRight } from 'lucide-react';
+import { Activity, ListOrdered, Bot, Cpu, ArrowRight, Zap, StopCircle } from 'lucide-react';
 import type { MoveAnalysis, MoveClassification } from './types/chess';
 import { centipawnsToWinPercent, classifyMove } from './analyzer/evaluator';
 import { isTheoryMove } from './analyzer/ecoBook';
@@ -509,105 +508,160 @@ export function ChessApp() {
               />
             </div>
 
-            {/* Right: Unified Analysis Hub (5 Cols) */}
-            <div className="lg:col-span-5 h-full flex flex-col min-h-0 gap-2">
-              {/* Compact Engine HUD Bar */}
-              <EngineHUD
-                evaluation={liveEvaluation}
-                isScanning={isScanning}
-                scanProgress={scanProgress}
-                currentScanPly={currentScanPly}
-                totalScanPlies={totalScanPlies}
-                currentScanSan={currentScanSan}
-                autoReviewEnabled={autoReviewEnabled}
-                onToggleAutoReview={toggleAutoReview}
-                multiPvCount={multiPvCount}
-                onSetMultiPv={handleSetMultiPv}
-                onStartDeepScan={handleStartDeepScan}
-                onCancelScan={handleCancelScan}
-                hideLines={true}
-              />
-
-              {/* Advantage Flow Chart (Collapsible) */}
-              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors shrink-0">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/80 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800/80 text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
-                    <Activity className="w-3.5 h-3.5 text-sky-500" />
-                    <span>Advantage Flow</span>
+            {/* Right: Master Unified Analysis Panel (5 Cols) */}
+            <div className="lg:col-span-5 h-full flex flex-col min-h-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden select-none">
+              {/* Integrated Panel Header: Telemetry + Action + Tabs */}
+              <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 shrink-0">
+                {/* Row 1: Stockfish 19 Engine Strip */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200/60 dark:border-slate-800/60 text-xs">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <div className="w-5 h-5 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500 shrink-0">
+                      <Cpu className="w-3 h-3" />
+                    </div>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">Stockfish 19</span>
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                        {isScanning ? `Scan: ${currentScanPly}/${totalScanPlies}` : `D:${liveEvaluation.depth}/${liveEvaluation.maxDepth}`}
+                      </span>
+                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                        activeScoreCp > 30
+                          ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                          : activeScoreCp < -30
+                          ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}>
+                        {liveEvaluation.mate !== undefined ? `M${Math.abs(liveEvaluation.mate)}` : activeScoreCp > 0 ? `+${(activeScoreCp / 100).toFixed(1)}` : `${(activeScoreCp / 100).toFixed(1)}`}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setShowFlowGraph(!showFlowGraph)}
-                    className="text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white px-2 py-0.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-                  >
-                    {showFlowGraph ? 'Hide' : 'Show'}
-                  </button>
+
+                  <div className="flex items-center space-x-1.5 shrink-0">
+                    <button
+                      onClick={toggleAutoReview}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                        autoReviewEnabled
+                          ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'
+                      }`}
+                      title={autoReviewEnabled ? "Auto Deep Review is ON" : "Auto Deep Review is OFF"}
+                    >
+                      <Zap className="w-2.5 h-2.5" />
+                      <span>Auto {autoReviewEnabled ? 'ON' : 'OFF'}</span>
+                    </button>
+
+                    {isScanning ? (
+                      <button
+                        onClick={handleCancelScan}
+                        className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/60 dark:hover:bg-red-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <StopCircle className="w-3 h-3 text-red-500" />
+                        <span>Cancel ({scanProgress}%)</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleStartDeepScan(10)}
+                        className="px-2.5 py-1 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                      >
+                        <Zap className="w-3 h-3 fill-current text-cyan-200" />
+                        <span>Deep Review</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {showFlowGraph && (
-                  <div className="p-1.5">
-                    <EvalGraph
-                      analyses={analyses}
-                      currentPly={currentPly}
-                      onSelectPly={goToPly}
-                    />
+
+                {/* Progress bar if scanning */}
+                {isScanning && (
+                  <div className="px-3 py-1 bg-sky-500/5 border-b border-sky-500/20 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                      <span>Analyzing ply {currentScanPly} of {totalScanPlies} {currentScanSan && `(${currentScanSan})`}</span>
+                      <strong className="text-sky-500">{scanProgress}%</strong>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-blue-600 to-sky-400 transition-all duration-150" style={{ width: `${scanProgress}%` }} />
+                    </div>
                   </div>
                 )}
+
+                {/* Row 2: Segmented Tabs */}
+                <div className="flex items-center justify-between px-2.5 py-1.5">
+                  <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800/80 p-0.5 rounded-lg text-xs">
+                    <button
+                      onClick={() => setSidebarTab('moves')}
+                      className={`px-3 py-1 rounded-md font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                        sidebarTab === 'moves'
+                          ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <ListOrdered className="w-3.5 h-3.5" />
+                      <span>Moves</span>
+                      {blunderList.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 font-bold">
+                          {blunderList.length}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setSidebarTab('coach')}
+                      className={`px-3 py-1 rounded-md font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                        sidebarTab === 'coach'
+                          ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      <span>GM Coach</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                    </button>
+
+                    <button
+                      onClick={() => setSidebarTab('engine')}
+                      className={`px-3 py-1 rounded-md font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                        sidebarTab === 'engine'
+                          ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Cpu className="w-3.5 h-3.5" />
+                      <span>Engine</span>
+                    </button>
+                  </div>
+
+                  {sidebarTab === 'moves' && (
+                    <button
+                      onClick={() => setShowFlowGraph(!showFlowGraph)}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                        showFlowGraph
+                          ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
+                          : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'
+                      }`}
+                      title="Toggle Advantage Flow graph"
+                    >
+                      <Activity className="w-3 h-3" />
+                      <span>{showFlowGraph ? 'Hide Flow' : 'Show Flow'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Segmented Controller: [Moves] [GM Coach] [Engine Lines] */}
-              <div className="flex items-center p-1 bg-slate-200/70 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl shrink-0 gap-1 select-none">
-                <button
-                  onClick={() => setSidebarTab('moves')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    sidebarTab === 'moves'
-                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <ListOrdered className="w-3.5 h-3.5" />
-                  <span>Moves</span>
-                  {blunderList.length > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 font-bold">
-                      {blunderList.length}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setSidebarTab('coach')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    sidebarTab === 'coach'
-                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <Bot className="w-3.5 h-3.5" />
-                  <span>GM Coach</span>
-                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                </button>
-
-                <button
-                  onClick={() => setSidebarTab('engine')}
-                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    sidebarTab === 'engine'
-                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <Cpu className="w-3.5 h-3.5" />
-                  <span>Lines</span>
-                  {liveEvaluation?.lines && liveEvaluation.lines.length > 0 && (
-                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                      ({multiPvCount})
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Tab Content Display Area */}
+              {/* Tab Body Content (Takes 100% of remaining height, cleanly scrollable) */}
               <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {/* 1. Moves Tab */}
                 {sidebarTab === 'moves' && (
-                  <div className="flex-1 min-h-0 flex flex-col gap-2">
+                  <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                    {/* Collapsible Advantage Flow Chart inside Moves tab */}
+                    {showFlowGraph && (
+                      <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
+                        <EvalGraph
+                          analyses={analyses}
+                          currentPly={currentPly}
+                          onSelectPly={goToPly}
+                        />
+                      </div>
+                    )}
+
+                    {/* Move Table */}
                     <div className="flex-1 min-h-0">
                       <MoveTable
                         analyses={analyses}
@@ -616,9 +670,9 @@ export function ChessApp() {
                       />
                     </div>
 
-                    {/* Active Move Tactical Card with quick jump to GM Alex */}
+                    {/* Active Move Tactical Card */}
                     {currentAnalysis && (
-                      <div className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-3 shadow-xs shrink-0 select-none">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 select-none">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <ClassificationBadge classification={currentAnalysis.classification} size="sm" />
                           <div className="min-w-0">
@@ -632,7 +686,7 @@ export function ChessApp() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[190px] sm:max-w-[260px]">
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-[280px]">
                               {currentAnalysis.coachCommentary || (currentAnalysis.bestMove ? `Best: ${currentAnalysis.bestMove}` : 'Normal book or quiet move')}
                             </p>
                           </div>
@@ -650,9 +704,9 @@ export function ChessApp() {
                   </div>
                 )}
 
-                {/* 2. GM Coach Tab (Full height & width, clean chat & suggestions) */}
+                {/* 2. GM Coach Tab (100% of height, no Advantage Flow taking space) */}
                 {sidebarTab === 'coach' && (
-                  <div className="flex-1 min-h-0">
+                  <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                     <CoachChatDrawer
                       currentAnalysis={currentAnalysis}
                       playerSide={chessInstance.turn()}
@@ -662,7 +716,7 @@ export function ChessApp() {
 
                 {/* 3. Engine Lines Tab */}
                 {sidebarTab === 'engine' && (
-                  <div className="flex-1 min-h-0 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs flex flex-col gap-3 overflow-y-auto">
+                  <div className="flex-1 min-h-0 p-3 flex flex-col gap-3 overflow-y-auto">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
                       <div className="flex items-center gap-1.5">
                         <Cpu className="w-4 h-4 text-sky-500" />

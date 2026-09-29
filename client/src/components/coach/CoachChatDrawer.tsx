@@ -3,7 +3,6 @@ import {
   Bot,
   Send,
   Sparkles,
-  ArrowRight,
   Lightbulb,
   Zap,
   Volume2,
@@ -46,6 +45,7 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
     coachPersona: 'Grandmaster Alex',
   });
   const [autoExplanation, setAutoExplanation] = useState<CoachExplanation | null>(null);
+  const [showMoveCommentary, setShowMoveCommentary] = useState<boolean>(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevPlyRef = useRef<number | null>(null);
@@ -236,20 +236,20 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
   const meta = currentAnalysis ? CLASSIFICATION_CONFIG[currentAnalysis.classification] : null;
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors select-none">
+    <div className="flex flex-col h-full w-full bg-transparent overflow-hidden select-none">
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50/70 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-bold text-xs">
-            <Bot className="w-4 h-4" />
+          <div className="w-6 h-6 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500 font-bold text-xs">
+            <Bot className="w-3.5 h-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
               <span>{coachStatus.coachPersona}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
             </h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-              {coachStatus.hasApiKey ? 'Powered by Gemini AI' : 'Live Grandmaster Pedagogy'}
+            <p className="text-[9.5px] text-slate-500 dark:text-slate-400">
+              {coachStatus.hasApiKey ? 'Powered by Gemini AI' : 'Live Pedagogy'}
             </p>
           </div>
         </div>
@@ -265,14 +265,14 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
                 if (!next) window.speechSynthesis.cancel();
               }}
               title={voiceEnabled ? 'Mute Live Voice Coach' : 'Enable Live Voice Coach'}
-              className={`p-1 rounded-md text-[10px] border transition cursor-pointer flex items-center gap-1 font-semibold ${
+              className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer flex items-center gap-1 font-semibold ${
                 voiceEnabled
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {voiceEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-              <span className="hidden sm:inline">{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
+              <span>{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
             </button>
           )}
 
@@ -280,44 +280,60 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
           <button
             onClick={handleClearChat}
             title="Clear Chat History"
-            className="p-1 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer"
+            className="p-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      {/* Active Move Tactical Commentary Banner */}
+      {/* Active Move Tactical Context Pill */}
       {currentAnalysis && meta && (
-        <div className="p-2.5 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 space-y-1.5 shrink-0">
+        <div className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-950/30 shrink-0 space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-1.5">
-              <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+            <div className="flex items-center space-x-1.5 min-w-0 truncate">
+              <span className="font-mono text-xs font-bold text-slate-900 dark:text-white shrink-0">
                 Move {Math.ceil(currentAnalysis.ply / 2)}: {currentAnalysis.san}
               </span>
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${meta.bgColor} ${meta.textColor} ${meta.borderColor}`}
+                className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border shrink-0 ${meta.bgColor} ${meta.textColor} ${meta.borderColor}`}
               >
                 {meta.label} {meta.badge}
               </span>
+              {currentAnalysis.bestMove && currentAnalysis.classification !== 'best' && currentAnalysis.classification !== 'brilliant' && (
+                <span className="text-[10px] text-slate-500 hidden sm:inline-flex items-center gap-1 shrink-0 font-mono">
+                  Best: <strong className="text-sky-500">{currentAnalysis.bestMove}</strong>
+                </span>
+              )}
             </div>
-            <span
-              className={`text-[10px] font-mono font-bold ${
-                currentAnalysis.deltaWinPercent < 0
-                  ? 'text-rose-500'
-                  : currentAnalysis.deltaWinPercent > 0
-                  ? 'text-sky-500'
-                  : 'text-slate-400'
-              }`}
-            >
-              Δ {currentAnalysis.deltaWinPercent > 0 ? `+${currentAnalysis.deltaWinPercent}` : currentAnalysis.deltaWinPercent}%
-            </span>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`text-[10px] font-mono font-bold ${
+                  currentAnalysis.deltaWinPercent < 0
+                    ? 'text-rose-500'
+                    : currentAnalysis.deltaWinPercent > 0
+                    ? 'text-sky-500'
+                    : 'text-slate-400'
+                }`}
+              >
+                Δ {currentAnalysis.deltaWinPercent > 0 ? `+${currentAnalysis.deltaWinPercent}` : currentAnalysis.deltaWinPercent}%
+              </span>
+              {autoExplanation && (
+                <button
+                  onClick={() => setShowMoveCommentary(!showMoveCommentary)}
+                  className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20"
+                >
+                  {showMoveCommentary ? 'Collapse' : 'Explain'}
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* AI Coach Tactical Commentary */}
-          {autoExplanation && (
-            <div className="text-[11px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-2xs leading-relaxed space-y-1">
-              <p className="font-medium">{autoExplanation.commentary}</p>
+          {/* AI Coach Tactical Commentary (compact with scroll limit) */}
+          {autoExplanation && showMoveCommentary && (
+            <div className="text-[11px] text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 shadow-2xs leading-relaxed max-h-24 overflow-y-auto space-y-1">
+              <p className="font-medium text-[11px]">{autoExplanation.commentary}</p>
               {autoExplanation.keyTacticalIdea && (
                 <div className="flex items-start gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-400 pt-0.5">
                   <Lightbulb className="w-3 h-3 shrink-0 mt-0.5" />
@@ -326,21 +342,11 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
               )}
             </div>
           )}
-
-          {/* Engine recommendation line if not best */}
-          {currentAnalysis.bestMove && currentAnalysis.classification !== 'best' && currentAnalysis.classification !== 'brilliant' && (
-            <div className="flex items-center space-x-1.5 text-[11px] text-slate-600 dark:text-slate-400">
-              <span className="font-medium text-[10px]">Engine recommendation:</span>
-              <span className="font-mono font-bold text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 rounded border border-sky-300 dark:border-sky-500/30 flex items-center gap-1 text-[10px]">
-                {currentAnalysis.bestMove} <ArrowRight className="w-2.5 h-2.5" />
-              </span>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Chat Messages Log */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2 select-text">
+      {/* Chat Messages Log (fills available height cleanly) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 select-text">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -370,13 +376,13 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Dynamic Contextual Suggested Question Chips */}
-      <div className="px-2 py-1.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/30 flex items-center gap-1 overflow-x-auto scrollbar-none text-[10px] shrink-0">
+      {/* Dynamic Contextual Suggested Question Chips (Permanently visible) */}
+      <div className="px-2.5 py-1.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-[10px] shrink-0">
         {dynamicSuggestedQuestions.map((q, idx) => (
           <button
             key={idx}
             onClick={() => handleSend(q)}
-            className="whitespace-nowrap px-2 py-0.8 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs"
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs shrink-0 active:scale-95"
           >
             <Sparkles className="w-2.5 h-2.5 text-sky-500" />
             <span>{q}</span>
@@ -384,8 +390,8 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
         ))}
       </div>
 
-      {/* Input Form */}
-      <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70 shrink-0">
+      {/* Input Form (Permanently Anchored & Fully Visible) */}
+      <div className="p-2.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -398,12 +404,12 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask GM Alex about this move or position..."
-            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-sky-500 transition placeholder-slate-400 dark:placeholder-slate-500"
+            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-sky-500 transition placeholder-slate-400 dark:placeholder-slate-500"
           />
           <button
             type="submit"
-            disabled={!input.trim()}
-            className="p-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-lg transition cursor-pointer shadow-xs shadow-blue-500/20"
+            disabled={!input.trim() || isThinking}
+            className="p-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-lg transition cursor-pointer shadow-xs shadow-blue-500/20 active:scale-95"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
