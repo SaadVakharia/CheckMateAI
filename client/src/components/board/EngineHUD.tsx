@@ -15,6 +15,7 @@ interface EngineHUDProps {
   onSetMultiPv: (count: number) => void;
   onStartDeepScan: (depth: number) => void;
   onCancelScan: () => void;
+  hideLines?: boolean;
 }
 
 export const EngineHUD: React.FC<EngineHUDProps> = ({
@@ -30,6 +31,7 @@ export const EngineHUD: React.FC<EngineHUDProps> = ({
   onSetMultiPv,
   onStartDeepScan,
   onCancelScan,
+  hideLines = false,
 }) => {
   const [targetScanDepth, setTargetScanDepth] = useState<number>(10);
   const [showConfig, setShowConfig] = useState<boolean>(false);
@@ -222,7 +224,7 @@ export const EngineHUD: React.FC<EngineHUDProps> = ({
       )}
 
       {/* MultiPV Lines Display */}
-      {evaluation?.lines && evaluation.lines.length > 0 && !isScanning && (
+      {!hideLines && evaluation?.lines && evaluation.lines.length > 0 && !isScanning && (
         <div className="mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-800/80 space-y-1">
           {evaluation.lines.slice(0, multiPvCount).map((line, idx) => {
             const evalStr = line.mate !== undefined

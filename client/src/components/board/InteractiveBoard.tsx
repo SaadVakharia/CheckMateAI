@@ -28,6 +28,7 @@ interface InteractiveBoardProps {
     whiteElo?: string;
     blackElo?: string;
   };
+  showCoachFeedbackBar?: boolean;
   onMakeMove: (sourceSquare: string, targetSquare: string) => boolean;
   onFirst: () => void;
   onPrev: () => void;
@@ -86,6 +87,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
   secondaryMoves,
   currentAnalysis,
   players,
+  showCoachFeedbackBar = false,
   onMakeMove,
   onFirst,
   onPrev,
@@ -259,12 +261,20 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
       {/* Main Board + Eval Bar row */}
       <div className="flex items-center justify-center gap-2 flex-1 min-h-0 py-0.5 overflow-hidden">
         {/* Real-time Eval Bar */}
-        <div className="h-full max-h-[min(480px,calc(100vh-270px))] flex items-center justify-center">
+        <div className={`h-full flex items-center justify-center ${
+          showCoachFeedbackBar
+            ? 'max-h-[min(480px,calc(100vh-270px))]'
+            : 'max-h-[min(560px,calc(100vh-210px))]'
+        }`}>
           <EvalBar scoreCp={scoreCp} mate={mate} isFlipped={isFlipped} />
         </div>
 
         {/* The Chessboard with Chess.com Badge Overlay */}
-        <div className="relative aspect-square h-full max-h-[min(480px,calc(100vh-270px))] rounded-xl overflow-hidden shadow-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 transition-colors">
+        <div className={`relative aspect-square h-full rounded-xl overflow-hidden shadow-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 transition-colors ${
+          showCoachFeedbackBar
+            ? 'max-h-[min(480px,calc(100vh-270px))]'
+            : 'max-h-[min(560px,calc(100vh-210px))]'
+        }`}>
           <Chessboard
             options={{
               position: game.fen(),
@@ -352,12 +362,14 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
       </div>
 
       {/* Signature Chess.com Coach Feedback Bar */}
-      <CoachFeedbackBar
-        currentAnalysis={currentAnalysis}
-        showBestMoveArrow={showBestMoveArrow}
-        onToggleBestMoveArrow={() => setShowBestMoveArrow(!showBestMoveArrow)}
-        onRetryMove={onRetryMove}
-      />
+      {showCoachFeedbackBar && (
+        <CoachFeedbackBar
+          currentAnalysis={currentAnalysis}
+          showBestMoveArrow={showBestMoveArrow}
+          onToggleBestMoveArrow={() => setShowBestMoveArrow(!showBestMoveArrow)}
+          onRetryMove={onRetryMove}
+        />
+      )}
 
       {/* Navigation Controls */}
       <div className="shrink-0">

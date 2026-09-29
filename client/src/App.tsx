@@ -11,6 +11,8 @@ import { PlatformSyncModal } from './components/importer/PlatformSyncModal';
 import { PGNModal } from './components/importer/PGNModal';
 import { EngineHUD } from './components/board/EngineHUD';
 import { PRELOADED_GAMES } from './services/chessPlatforms';
+import { ClassificationBadge } from './components/common/ClassificationBadge';
+import { Activity, ListOrdered, Bot, Cpu, ArrowRight } from 'lucide-react';
 import type { MoveAnalysis, MoveClassification } from './types/chess';
 import { centipawnsToWinPercent, classifyMove } from './analyzer/evaluator';
 import { isTheoryMove } from './analyzer/ecoBook';
@@ -24,6 +26,8 @@ export function ChessApp() {
   const [activeTab, setActiveTab] = useState<'board' | 'review' | 'puzzles' | 'analytics'>('board');
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPgnModalOpen, setIsPgnModalOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'moves' | 'coach' | 'engine'>('moves');
+  const [showFlowGraph, setShowFlowGraph] = useState<boolean>(true);
 
   // Chess Game State
   const [chessInstance, setChessInstance] = useState<Chess>(() => new Chess());
@@ -469,8 +473,8 @@ export function ChessApp() {
         {/* Tab 1: Analysis Board */}
         {activeTab === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
-            {/* Left: Interactive Board & Controls (5 Cols) */}
-            <div className="lg:col-span-5 h-full flex flex-col min-h-0">
+            {/* Left: Interactive Board & Controls (7 Cols on desktop for hero presentation) */}
+            <div className="lg:col-span-7 h-full flex flex-col min-h-0">
               <InteractiveBoard
                 game={chessInstance}
                 isFlipped={isFlipped}
@@ -484,6 +488,7 @@ export function ChessApp() {
                 secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
                 currentAnalysis={currentAnalysis}
                 players={players}
+                showCoachFeedbackBar={false}
                 onRetryMove={() => {
                   if (currentPly > 0) {
                     goToPly(currentPly - 1);
@@ -504,16 +509,9 @@ export function ChessApp() {
               />
             </div>
 
-            {/* Right: Analysis & AI Coach Panel (7 Cols) */}
-            <div className="lg:col-span-7 h-full flex flex-col min-h-0 gap-2">
-              {/* Advantage Flow Chart */}
-              <EvalGraph
-                analyses={analyses}
-                currentPly={currentPly}
-                onSelectPly={goToPly}
-              />
-
-              {/* Live Engine HUD & Deep Scan Controller */}
+            {/* Right: Unified Analysis Hub (5 Cols) */}
+            <div className="lg:col-span-5 h-full flex flex-col min-h-0 gap-2">
+              {/* Compact Engine HUD Bar */}
               <EngineHUD
                 evaluation={liveEvaluation}
                 isScanning={isScanning}
@@ -527,23 +525,223 @@ export function ChessApp() {
                 onSetMultiPv={handleSetMultiPv}
                 onStartDeepScan={handleStartDeepScan}
                 onCancelScan={handleCancelScan}
+                hideLines={true}
               />
 
-              {/* Lower split: Move Table & "Ask the Coach" */}
-              <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                <div className="md:col-span-5 h-full min-h-0">
-                  <MoveTable
-                    analyses={analyses}
-                    currentPly={currentPly}
-                    onSelectPly={goToPly}
-                  />
+              {/* Advantage Flow Chart (Collapsible) */}
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-colors shrink-0">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/80 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800/80 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                    <Activity className="w-3.5 h-3.5 text-sky-500" />
+                    <span>Advantage Flow</span>
+                  </div>
+                  <button
+                    onClick={() => setShowFlowGraph(!showFlowGraph)}
+                    className="text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white px-2 py-0.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    {showFlowGraph ? 'Hide' : 'Show'}
+                  </button>
                 </div>
-                <div className="md:col-span-7 h-full min-h-0">
-                  <CoachChatDrawer
-                    currentAnalysis={currentAnalysis}
-                    playerSide={chessInstance.turn()}
-                  />
-                </div>
+                {showFlowGraph && (
+                  <div className="p-1.5">
+                    <EvalGraph
+                      analyses={analyses}
+                      currentPly={currentPly}
+                      onSelectPly={goToPly}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Segmented Controller: [Moves] [GM Coach] [Engine Lines] */}
+              <div className="flex items-center p-1 bg-slate-200/70 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl shrink-0 gap-1 select-none">
+                <button
+                  onClick={() => setSidebarTab('moves')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    sidebarTab === 'moves'
+                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
+                  }`}
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                  <span>Moves</span>
+                  {blunderList.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 font-bold">
+                      {blunderList.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setSidebarTab('coach')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    sidebarTab === 'coach'
+                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>GM Coach</span>
+                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                </button>
+
+                <button
+                  onClick={() => setSidebarTab('engine')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    sidebarTab === 'engine'
+                      ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200 dark:border-slate-700/60'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>Lines</span>
+                  {liveEvaluation?.lines && liveEvaluation.lines.length > 0 && (
+                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                      ({multiPvCount})
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Tab Content Display Area */}
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                {/* 1. Moves Tab */}
+                {sidebarTab === 'moves' && (
+                  <div className="flex-1 min-h-0 flex flex-col gap-2">
+                    <div className="flex-1 min-h-0">
+                      <MoveTable
+                        analyses={analyses}
+                        currentPly={currentPly}
+                        onSelectPly={goToPly}
+                      />
+                    </div>
+
+                    {/* Active Move Tactical Card with quick jump to GM Alex */}
+                    {currentAnalysis && (
+                      <div className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-3 shadow-xs shrink-0 select-none">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <ClassificationBadge classification={currentAnalysis.classification} size="sm" />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                              <span>Move {Math.floor((currentAnalysis.ply - 1) / 2) + 1}{currentAnalysis.ply % 2 === 1 ? '.' : '...'} {currentAnalysis.san}</span>
+                              {currentAnalysis.deltaWinPercent !== undefined && (
+                                <span className={`text-[10px] font-mono ${currentAnalysis.deltaWinPercent >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                  {currentAnalysis.deltaWinPercent >= 0
+                                    ? `+${currentAnalysis.deltaWinPercent.toFixed(1)}%`
+                                    : `${currentAnalysis.deltaWinPercent.toFixed(1)}%`}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[190px] sm:max-w-[260px]">
+                              {currentAnalysis.coachCommentary || (currentAnalysis.bestMove ? `Best: ${currentAnalysis.bestMove}` : 'Normal book or quiet move')}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSidebarTab('coach')}
+                          className="px-2.5 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-xs font-bold flex items-center gap-1 shrink-0 transition cursor-pointer shadow-xs active:scale-95"
+                          title="Open Grandmaster Alex coach discussion"
+                        >
+                          <span>Ask Coach</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. GM Coach Tab (Full height & width, clean chat & suggestions) */}
+                {sidebarTab === 'coach' && (
+                  <div className="flex-1 min-h-0">
+                    <CoachChatDrawer
+                      currentAnalysis={currentAnalysis}
+                      playerSide={chessInstance.turn()}
+                    />
+                  </div>
+                )}
+
+                {/* 3. Engine Lines Tab */}
+                {sidebarTab === 'engine' && (
+                  <div className="flex-1 min-h-0 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xs flex flex-col gap-3 overflow-y-auto">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
+                      <div className="flex items-center gap-1.5">
+                        <Cpu className="w-4 h-4 text-sky-500" />
+                        <span>Stockfish 19 MultiPV Lines</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3].map((count) => (
+                          <button
+                            key={count}
+                            onClick={() => handleSetMultiPv(count)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                              multiPvCount === count
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {count} Lines
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Variation Lines */}
+                    <div className="space-y-2 flex-1">
+                      {liveEvaluation.lines && liveEvaluation.lines.length > 0 ? (
+                        liveEvaluation.lines.slice(0, multiPvCount).map((line, idx) => {
+                          const evalStr = line.mate !== undefined
+                            ? `M${Math.abs(line.mate)}`
+                            : line.cp > 0
+                            ? `+${(line.cp / 100).toFixed(1)}`
+                            : line.cp < 0
+                            ? `-${(Math.abs(line.cp) / 100).toFixed(1)}`
+                            : '0.0';
+
+                          return (
+                            <div
+                              key={line.id}
+                              className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 flex flex-col gap-1.5 transition hover:border-sky-500/40"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                                    idx === 0
+                                      ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+                                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                  }`}>
+                                    Line {idx + 1}
+                                  </span>
+                                  <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">
+                                    {evalStr}
+                                  </span>
+                                </div>
+                                {line.bestMoveSan && (
+                                  <span className="font-bold text-xs bg-slate-200/80 dark:bg-slate-700/80 px-2 py-0.5 rounded text-slate-800 dark:text-slate-200">
+                                    {line.bestMoveSan}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="font-mono text-xs text-slate-600 dark:text-slate-400 leading-relaxed break-words bg-white/60 dark:bg-slate-900/60 p-1.5 rounded border border-slate-200/60 dark:border-slate-800/60">
+                                {line.pv && line.pv.length > 0 ? line.pv.join(' ') : 'Evaluating variation...'}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-500">
+                          Engine is evaluating position...
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Engine Specs Footer */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                      <span>Depth: {liveEvaluation.depth}/{liveEvaluation.maxDepth}</span>
+                      <span>Speed: {(liveEvaluation.nodesPerSecond / 1000000).toFixed(1)}M nps</span>
+                      <span>Nodes: {liveEvaluation.totalNodes.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
