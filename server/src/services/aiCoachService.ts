@@ -11,29 +11,32 @@ import type {
 
 export class AiCoachService {
   private genAI: GoogleGenerativeAI | null = null;
-  private modelName: string = 'gemini-1.5-flash';
+  private modelName: string = 'gemini-3.5-flash-lite';
 
-  constructor() {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-    if (apiKey) {
+  public getGenAI(): GoogleGenerativeAI | null {
+    const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '').trim();
+    if (!apiKey) return null;
+    if (!this.genAI) {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }
+    return this.genAI;
   }
 
   public hasApiKey(): boolean {
-    return !!this.genAI;
+    return !!this.getGenAI();
   }
 
   /**
    * Explains a specific move with grandmaster pedagogy
    */
   public async explainMove(req: ExplainMoveRequest): Promise<ExplainMoveResponse> {
-    if (!this.genAI) {
+    const client = this.getGenAI();
+    if (!client) {
       return PedagogyHeuristics.explainMove(req);
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: this.modelName });
+      const model = client.getGenerativeModel({ model: this.modelName });
 
       const prompt = `
 You are Grandmaster Alex, an encouraging, elite chess coach and master pedagogue.
@@ -81,12 +84,13 @@ Do NOT wrap in markdown fences or triple backticks if possible, just raw JSON.
    * Conversational live Q&A about current position on the board
    */
   public async chatWithCoach(req: CoachChatRequest): Promise<CoachChatResponse> {
-    if (!this.genAI) {
+    const client = this.getGenAI();
+    if (!client) {
       return PedagogyHeuristics.answerQuestion(req);
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: this.modelName });
+      const model = client.getGenerativeModel({ model: this.modelName });
 
       const conversationHistory = req.chatHistory
         ? req.chatHistory.map((m) => `${m.role === 'user' ? 'Student' : 'GM Alex'}: ${m.content}`).join('\n')
@@ -136,12 +140,13 @@ Return JSON strictly matching:
    * Generates full game narrative review summary
    */
   public async generateGameSummary(req: GameSummaryRequest): Promise<GameSummaryResponse> {
-    if (!this.genAI) {
+    const client = this.getGenAI();
+    if (!client) {
       return PedagogyHeuristics.generateGameSummary(req);
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: this.modelName });
+      const model = client.getGenerativeModel({ model: this.modelName });
 
       const prompt = `
 You are Grandmaster Alex. Provide a rich post-game match review narrative for this chess match.
