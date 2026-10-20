@@ -9,9 +9,29 @@ import type {
   GameSummaryResponse,
 } from '../types';
 
+function extractAndParseJson<T>(rawText: string): T {
+  const trimmed = rawText.trim();
+  // Strip code block wrappers if present
+  const unblocked = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    return JSON.parse(unblocked) as T;
+  } catch {
+    // Attempt extracting the first JSON object {}
+    const match = unblocked.match(/\{[\s\S]*\}/);
+    if (match) {
+      return JSON.parse(match[0]) as T;
+    }
+    throw new Error(`Failed to parse JSON from AI response: ${rawText.slice(0, 100)}...`);
+  }
+}
+
 export class AiCoachService {
   private genAI: GoogleGenerativeAI | null = null;
-  private modelName: string = 'gemini-3.5-flash-lite';
+  private modelName: string = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+
+  public getModelName(): string {
+    return this.modelName;
+  }
 
   public getGenAI(): GoogleGenerativeAI | null {
     const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '').trim();
@@ -64,10 +84,13 @@ Do NOT wrap in markdown fences or triple backticks if possible, just raw JSON.
 `;
 
       const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const parsed = extractAndParseJson<{
+        commentary?: string;
+        keyTacticalIdea?: string;
+        betterPlan?: string;
+      }>(text);
 
-      const parsed = JSON.parse(cleaned);
       return {
         commentary: parsed.commentary || '',
         keyTacticalIdea: parsed.keyTacticalIdea || '',
@@ -121,12 +144,14 @@ Return JSON strictly matching:
 `;
 
       const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const parsed = extractAndParseJson<{
+        answer?: string;
+        suggestedQuestions?: string[];
+      }>(text);
 
-      const parsed = JSON.parse(cleaned);
       return {
-        answer: parsed.answer,
+        answer: parsed.answer || 'Keep tactical vigilance and control the center.',
         suggestedQuestions: Array.isArray(parsed.suggestedQuestions) ? parsed.suggestedQuestions.slice(0, 3) : [],
         source: 'gemini',
       };
@@ -168,16 +193,21 @@ Return JSON strictly matching:
 `;
 
       const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const parsed = extractAndParseJson<{
+        narrative?: string;
+        whiteHighlights?: string[];
+        blackHighlights?: string[];
+        criticalTurningPoint?: string;
+        keyLesson?: string;
+      }>(text);
 
-      const parsed = JSON.parse(cleaned);
       return {
-        narrative: parsed.narrative,
+        narrative: parsed.narrative || 'An exciting chess match with rich tactical opportunities.',
         whiteHighlights: parsed.whiteHighlights || [],
         blackHighlights: parsed.blackHighlights || [],
-        criticalTurningPoint: parsed.criticalTurningPoint,
-        keyLesson: parsed.keyLesson,
+        criticalTurningPoint: parsed.criticalTurningPoint || 'The dynamic middle-game struggle.',
+        keyLesson: parsed.keyLesson || 'Always calculate forcing tactical moves carefully.',
         source: 'gemini',
       };
     } catch (err) {

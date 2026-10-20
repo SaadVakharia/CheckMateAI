@@ -51,7 +51,7 @@ export class CoachController {
       status: 'online',
       hasApiKey: aiCoachService.hasApiKey(),
       coachPersona: 'Grandmaster Alex',
-      model: 'gemini-1.5-flash',
+      model: aiCoachService.getModelName(),
     });
   }
 }
