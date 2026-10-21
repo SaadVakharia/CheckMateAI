@@ -26,34 +26,30 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   scanProgress,
   onOpenLaunchpad,
 }) => {
-  const steps: { id: WorkflowStep; label: string; sublabel: string; icon: React.ReactNode; stepNum: number }[] = [
+  const steps: { id: WorkflowStep; label: string; sublabel: string; icon: React.ReactNode }[] = [
     {
       id: 'select',
-      label: '1. Select Match',
+      label: 'Select Match',
       sublabel: movesCount > 0 ? `${movesCount} moves` : 'Choose game',
       icon: <Gamepad2 className="w-3.5 h-3.5" />,
-      stepNum: 1,
     },
     {
       id: 'report',
-      label: '2. Match Report',
+      label: 'Game Review',
       sublabel: isScanning ? `Scanning ${scanProgress}%` : 'Accuracy & Story',
       icon: <BarChart3 className="w-3.5 h-3.5" />,
-      stepNum: 2,
     },
     {
       id: 'board',
-      label: '3. GM Coach & Board',
+      label: 'Analysis Board',
       sublabel: 'Move-by-move AI',
       icon: <BrainCircuit className="w-3.5 h-3.5" />,
-      stepNum: 3,
     },
     {
       id: 'puzzles',
-      label: '4. Retrain Blunders',
+      label: 'Mistake Puzzles',
       sublabel: `${blundersCount} workout puzzles`,
       icon: <Target className="w-3.5 h-3.5" />,
-      stepNum: 4,
     },
   ];
 
@@ -75,58 +71,49 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   return (
     <div className="w-full bg-white dark:bg-[#070c18] border-b border-slate-200 dark:border-slate-800/80 px-4 py-2 transition-colors duration-200 select-none">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5">
-        {/* Step Indicator Pills */}
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto w-full md:w-auto scrollbar-none py-0.5">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto w-full md:w-auto scrollbar-none py-0.5">
           {steps.map((s, idx) => {
             const isActive = currentStep === s.id;
             const isCompleted = currentIdx > idx;
 
             return (
-              <React.Fragment key={s.id}>
-                {idx > 0 && (
-                  <div
-                    className={`hidden sm:block h-[1px] w-4 sm:w-6 transition-colors ${
-                      isCompleted ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-800'
-                    }`}
-                  />
-                )}
-
-                <button
-                  onClick={() => {
-                    if (s.id === 'select') {
-                      onOpenLaunchpad();
-                    } else {
-                      onSelectStep(s.id);
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer shrink-0 border ${
+              <button
+                key={s.id}
+                onClick={() => {
+                  if (s.id === 'select') {
+                    onOpenLaunchpad();
+                  } else {
+                    onSelectStep(s.id);
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer shrink-0 border ${
+                  isActive
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                    : isCompleted
+                    ? 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-900/50 hover:border-sky-400'
+                    : 'bg-slate-100 dark:bg-slate-900/70 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span
+                  className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                      ? 'bg-white/20 text-white'
                       : isCompleted
-                      ? 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-900/50 hover:border-sky-400'
-                      : 'bg-slate-100 dark:bg-slate-900/70 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-sky-500/15 text-sky-500'
+                      : 'bg-slate-200/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  <span
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      isActive
-                        ? 'bg-white text-blue-600'
-                        : isCompleted
-                        ? 'bg-sky-500 text-white'
-                        : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.stepNum}
-                  </span>
+                  {isCompleted && !isActive ? <CheckCircle2 className="w-3.5 h-3.5 text-sky-500" /> : s.icon}
+                </span>
 
-                  <div className="text-left flex flex-col">
-                    <span className="leading-tight font-bold">{s.label}</span>
-                    <span className={`text-[10px] leading-none ${isActive ? 'text-sky-100' : 'text-slate-600 dark:text-slate-300'}`}>
-                      {s.sublabel}
-                    </span>
-                  </div>
-                </button>
-              </React.Fragment>
+                <div className="text-left flex flex-col">
+                  <span className="leading-tight font-bold">{s.label}</span>
+                  <span className={`text-[10px] leading-none ${isActive ? 'text-sky-100' : 'text-slate-600 dark:text-slate-400'}`}>
+                    {s.sublabel}
+                  </span>
+                </div>
+              </button>
             );
           })}
         </div>

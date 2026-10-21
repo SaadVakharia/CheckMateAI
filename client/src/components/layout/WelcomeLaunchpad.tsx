@@ -122,21 +122,21 @@ export const WelcomeLaunchpad: React.FC<WelcomeLaunchpadProps> = ({
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-2">
-            Step 1: Choose Your Chess Match
+            Choose Your Chess Match
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl mt-1">
             Analyze your games, understand your mistakes with Grandmaster Alex, and retrain your blunders in interactive workouts.
           </p>
 
-          {/* Stepper Preview Badges */}
+          {/* Navigation Flow Preview */}
           <div className="hidden sm:flex items-center gap-2 mt-4 px-3 py-1.5 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-            <span className="text-sky-500 font-bold">1. Select Match</span>
+            <span className="text-sky-500 font-bold">Select Match</span>
             <span>➔</span>
-            <span>2. Match Report</span>
+            <span>Game Review</span>
             <span>➔</span>
-            <span>3. GM Coach & Board</span>
+            <span>Analysis Board</span>
             <span>➔</span>
-            <span>4. Retrain Blunders</span>
+            <span>Mistake Puzzles</span>
           </div>
 
           {/* Mode Selector Tabs */}

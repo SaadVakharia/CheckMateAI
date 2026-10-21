@@ -162,7 +162,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-sky-400 border border-blue-200 dark:border-blue-900/60 uppercase tracking-wider">
-              Step 2 • Match Report
+              Match Report
             </span>
             {openingInfo && (
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -377,10 +377,10 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         </div>
       </div>
 
-      {/* Bottom Step Progression Banner */}
+      {/* Bottom Progression Banner */}
       <div className="p-6 bg-slate-100 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Ready for the Next Step?</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Continue Analysis</h4>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Inspect the board move-by-move with Grandmaster Alex, or jump straight to the blunder workout.
           </p>

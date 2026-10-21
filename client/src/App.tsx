@@ -251,7 +251,7 @@ export function ChessApp() {
         }, 200);
       }
 
-      // Transition smoothly into Step 2: Match Report
+      // Transition smoothly into Match Report
       setWorkflowStep('report');
       setIsLaunchpadOpen(false);
     } catch (err) {
@@ -453,11 +453,9 @@ export function ChessApp() {
 
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
-      {/* Navbar & Stepper (fixed top) */}
+      {/* Navigation (fixed top) */}
       <div className="shrink-0">
         <Navbar
-          activeTab={workflowStep === 'report' ? 'review' : workflowStep === 'board' ? 'board' : 'puzzles'}
-          onChangeTab={(tab) => setWorkflowStep(tab === 'review' ? 'report' : tab === 'board' ? 'board' : 'puzzles')}
           onOpenSync={() => setIsSyncModalOpen(true)}
           onOpenPgn={() => setIsPgnModalOpen(true)}
           onResetGame={handleResetGame}
@@ -476,7 +474,7 @@ export function ChessApp() {
 
       {/* Main Viewport Content Area (locked height, zero outer scroll) */}
       <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col overflow-hidden">
-        {/* Step 2: Match Report */}
+        {/* Match Report */}
         {workflowStep === 'report' && (
           <MatchReportView
             analyses={analyses}
@@ -496,7 +494,7 @@ export function ChessApp() {
           />
         )}
 
-        {/* Step 3: Analysis Board & GM Coach */}
+        {/* Analysis Board & GM Coach */}
         {workflowStep === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
             {/* Left: Match Info + Interactive Board & Controls (6 Cols) */}
@@ -838,7 +836,7 @@ export function ChessApp() {
                   </div>
                 )}
 
-                {/* Progression Footer to Step 4: Retrain Blunders */}
+                {/* Progression Footer to Retrain Blunders */}
                 {blunderList.length > 0 && (
                   <div className="p-2.5 bg-slate-50 dark:bg-[#070c18] border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs shrink-0 rounded-b-2xl">
                     <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
@@ -848,7 +846,7 @@ export function ChessApp() {
                       onClick={() => setWorkflowStep('puzzles')}
                       className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-red-500/20 text-xs"
                     >
-                      <span>Step 4: Retrain Mistakes</span>
+                      <span>Retrain Mistakes</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -858,7 +856,7 @@ export function ChessApp() {
           </div>
         )}
 
-        {/* Step 4: Mistake Puzzles Workout */}
+        {/* Mistake Puzzles Workout */}
         {workflowStep === 'puzzles' && (
           <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center justify-center p-2">
             <MistakePuzzlePlayer blunders={blunderList} />
