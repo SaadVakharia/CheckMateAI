@@ -14,6 +14,7 @@ import {
 import type { MoveAnalysis } from '../../types/chess';
 import { sounds } from '../../utils/sound';
 import { useTheme } from '../../context/ThemeContext';
+import { MoveNotationTooltip, ChessGlossaryHint } from '../common/MoveNotationTooltip';
 
 interface MistakePuzzlePlayerProps {
   blunders: MoveAnalysis[];
@@ -91,6 +92,7 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
   const [solved, setSolved] = useState(false);
   const [solvedPuzzles, setSolvedPuzzles] = useState<Set<number>>(new Set());
   const [errorStatus, setErrorStatus] = useState<{ type: 'blunder' | 'suboptimal'; message: string } | null>(null);
+  const [hoveredMove, setHoveredMove] = useState<{ from?: string; to?: string } | null>(null);
 
   const activeBlunders = useMemo(() => {
     return blunders.length > 0 ? blunders : [FALLBACK_BLUNDER];
@@ -201,6 +203,28 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
   // Board orientation follows the active turn of the puzzle position
   const boardOrientation: 'white' | 'black' = puzzleGame.turn() === 'w' ? 'white' : 'black';
 
+  // Dynamic square highlights and arrows for beginner hover hints
+  const customSquareStyles: Record<string, React.CSSProperties> = {};
+  const customArrows: { startSquare: string; endSquare: string; color: string }[] = [];
+
+  if (hoveredMove?.from && hoveredMove?.to) {
+    customSquareStyles[hoveredMove.from] = {
+      backgroundColor: 'rgba(239, 68, 68, 0.4)',
+      boxShadow: 'inset 0 0 0 2px rgba(239, 68, 68, 0.85)',
+      borderRadius: '4px',
+    };
+    customSquareStyles[hoveredMove.to] = {
+      backgroundColor: 'rgba(239, 68, 68, 0.55)',
+      boxShadow: 'inset 0 0 0 3px #ef4444',
+      borderRadius: '4px',
+    };
+    customArrows.push({
+      startSquare: hoveredMove.from,
+      endSquare: hoveredMove.to,
+      color: isDark ? 'rgba(248, 113, 113, 0.95)' : 'rgba(220, 38, 38, 0.95)',
+    });
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto p-4 select-none w-full">
       {/* Board */}
@@ -209,6 +233,8 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
           options={{
             position: puzzleGame.fen(),
             boardOrientation,
+            arrows: customArrows,
+            squareStyles: customSquareStyles,
             darkSquareStyle: { backgroundColor: isDark ? '#1e324d' : '#3e628d' },
             lightSquareStyle: { backgroundColor: isDark ? '#d8e4f2' : '#e8f1fa' },
             animationDurationInMs: 200,
@@ -261,15 +287,43 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
             </div>
           )}
 
-          {/* Prompt banner */}
-          <div className="p-3.5 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+          {/* Prompt banner with Beginner Hover Hints */}
+          <div className="p-3.5 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">The match situation:</div>
-            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              In this position, <span className="text-red-600 dark:text-red-400 font-bold">{currentBlunder.san}</span> was played (a {currentBlunder.classification.replace(/_/g, ' ')}).
+            <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-normal">
+              In this position,{' '}
+              <MoveNotationTooltip
+                san={currentBlunder.san}
+                from={currentBlunder.from}
+                to={currentBlunder.to}
+                variant="blunder"
+                onHoverChange={(isHovered, from, to) => {
+                  setHoveredMove(isHovered ? { from, to } : null);
+                }}
+              />{' '}
+              was played (
+              <ChessGlossaryHint term="blunder" className="font-bold text-red-600 dark:text-red-400">
+                a blunder
+              </ChessGlossaryHint>
+              ).
             </div>
             <div className="text-xs text-sky-600 dark:text-sky-400 font-bold flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Playing as {boardOrientation === 'white' ? 'White' : 'Black'}: Find the winning refutation on the board!</span>
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Playing as {boardOrientation === 'white' ? 'White' : 'Black'}: Find the winning{' '}
+                <ChessGlossaryHint term="refutation" className="text-sky-600 dark:text-sky-400">
+                  refutation
+                </ChessGlossaryHint>{' '}
+                on the board!
+              </span>
+            </div>
+
+            {/* Beginner Hover Tip */}
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>
+                Hover over <strong className="text-red-500 font-mono">{currentBlunder.san}</strong> for a plain-English translation and arrow highlight on the board!
+              </span>
             </div>
           </div>
 
@@ -339,8 +393,17 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
 
             {hintLevel >= 3 && currentBlunder.bestMove && (
               <div className="text-xs p-2.5 bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 rounded-lg text-sky-800 dark:text-sky-300 font-mono animate-in fade-in duration-150">
-                <span className="text-sky-700 dark:text-sky-400 font-bold">Hint 3 (Best Move): </span>
-                Play {currentBlunder.bestMove}
+                <span className="text-sky-700 dark:text-sky-400 font-bold font-sans">Hint 3 (Best Move): </span>
+                Play{' '}
+                <MoveNotationTooltip
+                  san={currentBlunder.bestMove}
+                  from={currentBlunder.bestMoveUci ? currentBlunder.bestMoveUci.slice(0, 2) : undefined}
+                  to={currentBlunder.bestMoveUci ? currentBlunder.bestMoveUci.slice(2, 4) : undefined}
+                  variant="best"
+                  onHoverChange={(isHovered, from, to) => {
+                    setHoveredMove(isHovered ? { from, to } : null);
+                  }}
+                />
               </div>
             )}
           </div>
