@@ -226,9 +226,9 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto p-4 select-none w-full">
+    <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 max-w-5xl mx-auto p-1 sm:p-2 select-none w-full items-center lg:items-start justify-center">
       {/* Board */}
-      <div className="w-full max-w-[460px] mx-auto aspect-square rounded-2xl overflow-hidden shadow-2xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 transition-colors">
+      <div className="w-full max-w-[420px] lg:max-w-[460px] shrink-0 aspect-square rounded-2xl overflow-hidden shadow-2xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 transition-colors">
         <Chessboard
           options={{
             position: puzzleGame.fen(),
@@ -248,7 +248,7 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
       </div>
 
       {/* Right Exercise Card */}
-      <div className="flex-1 flex flex-col justify-between bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors space-y-6">
+      <div className="flex-1 w-full min-w-0 flex flex-col justify-between bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-colors space-y-5">
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">

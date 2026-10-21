@@ -858,8 +858,12 @@ export function ChessApp() {
 
         {/* Mistake Puzzles Workout */}
         {workflowStep === 'puzzles' && (
-          <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center justify-center p-2">
-            <MistakePuzzlePlayer blunders={blunderList} />
+          <div className="flex-1 min-h-0 w-full overflow-y-auto p-2 sm:p-4">
+            <div className="min-h-full w-full flex flex-col items-center justify-start py-1 sm:py-3">
+              <div className="my-auto w-full flex justify-center">
+                <MistakePuzzlePlayer blunders={blunderList} />
+              </div>
+            </div>
           </div>
         )}
       </main>
