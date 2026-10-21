@@ -793,6 +793,9 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
                             ? 'font-bold text-white underline decoration-sky-300'
                             : 'font-bold text-sky-600 dark:text-sky-400 font-mono'
                         }
+                        onHoverMove={(isHovered, from, to) => {
+                          setHoveredMove(isHovered ? { from, to } : null);
+                        }}
                       />
                     </div>
                     <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 px-1 font-medium">{msg.time}</span>
