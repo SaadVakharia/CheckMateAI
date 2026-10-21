@@ -21,6 +21,7 @@ import type { MoveAnalysis } from '../../types/chess';
 import { sounds } from '../../utils/sound';
 import { useTheme } from '../../context/ThemeContext';
 import { MoveNotationTooltip, ChessGlossaryHint } from '../common/MoveNotationTooltip';
+import { FormattedMessage } from '../common/FormattedMessage';
 import {
   fetchPuzzleHints,
   askCoachChat,
@@ -634,28 +635,41 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
                 )}
 
                 {hintLevel >= 1 && (
-                  <div className="text-xs p-3 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 animate-in fade-in duration-150">
-                    <span className="text-amber-600 dark:text-amber-400 font-bold">Hint 1 (Directional): </span>
-                    {aiHints?.hint1 ||
-                      `Examine the square ${currentBlunder.san} moved to. Notice how it left an exposed line or unprotected piece. Look for active pieces that can deliver a forcing strike.`}
+                  <div className="text-xs p-3 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 animate-in fade-in duration-150 space-y-1">
+                    <span className="text-amber-600 dark:text-amber-400 font-bold block">Hint 1 (Directional): </span>
+                    <FormattedMessage
+                      text={
+                        aiHints?.hint1 ||
+                        `Examine the square ${currentBlunder.san} moved to. Notice how it left an exposed line or unprotected piece. Look for active pieces that can deliver a forcing strike.`
+                      }
+                      strongClassName="font-bold text-slate-900 dark:text-white"
+                    />
                   </div>
                 )}
 
                 {hintLevel >= 2 && (
-                  <div className="text-xs p-3 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 animate-in fade-in duration-150">
-                    <span className="text-amber-600 dark:text-amber-400 font-bold">Hint 2 (Tactical Theme): </span>
-                    {aiHints?.hint2 ||
-                      (currentBlunder.tacticalMotifs && currentBlunder.tacticalMotifs.length > 0
-                        ? `Tactical Theme: ${currentBlunder.tacticalMotifs.map((m) => m.replace(/_/g, ' ')).join(', ')}. Look for an unparryable forcing check, capture, or dual threat.`
-                        : 'Exploit the misplaced piece and seize tactical initiative.')}
+                  <div className="text-xs p-3 bg-slate-50 dark:bg-[#132038] border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 animate-in fade-in duration-150 space-y-1">
+                    <span className="text-amber-600 dark:text-amber-400 font-bold block">Hint 2 (Tactical Theme): </span>
+                    <FormattedMessage
+                      text={
+                        aiHints?.hint2 ||
+                        (currentBlunder.tacticalMotifs && currentBlunder.tacticalMotifs.length > 0
+                          ? `Tactical Theme: ${currentBlunder.tacticalMotifs.map((m) => m.replace(/_/g, ' ')).join(', ')}. Look for an unparryable forcing check, capture, or dual threat.`
+                          : 'Exploit the misplaced piece and seize tactical initiative.')
+                      }
+                      strongClassName="font-bold text-slate-900 dark:text-white"
+                    />
                   </div>
                 )}
 
                 {hintLevel >= 3 && (
                   <div className="text-xs p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 rounded-xl text-sky-800 dark:text-sky-300 animate-in fade-in duration-150 space-y-1.5">
                     <div>
-                      <span className="text-sky-700 dark:text-sky-400 font-bold">Hint 3 (Refutation Solution): </span>
-                      {aiHints?.hint3 || `The engine refutation is ${currentBlunder.bestMove || 'the best move'}.`}
+                      <span className="text-sky-700 dark:text-sky-400 font-bold block mb-1">Hint 3 (Refutation Solution): </span>
+                      <FormattedMessage
+                        text={aiHints?.hint3 || `The engine refutation is ${currentBlunder.bestMove || 'the best move'}.`}
+                        strongClassName="font-bold text-sky-700 dark:text-sky-300 font-mono"
+                      />
                     </div>
                     {currentBlunder.bestMove && (
                       <div className="flex items-center gap-1.5 pt-1">
@@ -739,7 +753,14 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
                           )}
                         </div>
                       )}
-                      <div>{msg.text}</div>
+                      <FormattedMessage
+                        text={msg.text}
+                        strongClassName={
+                          msg.sender === 'user'
+                            ? 'font-bold text-white underline decoration-sky-300'
+                            : 'font-bold text-sky-600 dark:text-sky-400 font-mono'
+                        }
+                      />
                     </div>
                     <span className="text-[9px] text-slate-400 px-1 mt-0.5">{msg.time}</span>
                   </div>

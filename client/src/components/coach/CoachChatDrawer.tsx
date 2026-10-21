@@ -12,6 +12,7 @@ import {
 import type { MoveAnalysis } from '../../types/chess';
 import { CLASSIFICATION_CONFIG } from '../../analyzer/evaluator';
 import { askCoachChat, explainMoveWithCoach, fetchCoachStatus, type CoachExplanation } from '../../services/coachApi';
+import { FormattedMessage } from '../common/FormattedMessage';
 
 interface CoachChatDrawerProps {
   currentAnalysis?: MoveAnalysis;
@@ -367,7 +368,14 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-bl-none shadow-2xs'
               }`}
             >
-              {msg.text}
+              <FormattedMessage
+                text={msg.text}
+                strongClassName={
+                  msg.sender === 'user'
+                    ? 'font-bold text-white underline decoration-sky-300'
+                    : 'font-bold text-sky-600 dark:text-sky-400 font-mono'
+                }
+              />
             </div>
             <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 px-1 font-medium">{msg.time}</span>
           </div>
