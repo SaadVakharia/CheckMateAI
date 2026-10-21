@@ -46,6 +46,19 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface PuzzleContext {
+  isPuzzleWorkout?: boolean;
+  blunderSan?: string;
+  blunderFrom?: string;
+  blunderTo?: string;
+  bestMove?: string;
+  tacticalMotifs?: string[];
+  hintLevel?: number;
+  hintsGiven?: string[];
+  lastUserAttempt?: string;
+  solved?: boolean;
+}
+
 export interface CoachChatRequest {
   fen: string;
   history?: string[];
@@ -55,11 +68,31 @@ export interface CoachChatRequest {
   currentMoveSan?: string;
   classification?: MoveClassification;
   bestMove?: string;
+  puzzleContext?: PuzzleContext;
 }
 
 export interface CoachChatResponse {
   answer: string;
   suggestedQuestions?: string[];
+  source: 'gemini' | 'heuristic';
+}
+
+export interface PuzzleHintsRequest {
+  fen: string;
+  playerSide?: 'w' | 'b';
+  blunderSan: string;
+  blunderFrom?: string;
+  blunderTo?: string;
+  bestMove?: string;
+  bestMoveUci?: string;
+  tacticalMotifs?: string[];
+  playerIntent?: string;
+}
+
+export interface PuzzleHintsResponse {
+  hint1: string;
+  hint2: string;
+  hint3: string;
   source: 'gemini' | 'heuristic';
 }
 
