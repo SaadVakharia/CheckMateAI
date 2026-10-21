@@ -142,13 +142,17 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
   // Board orientation follows the active turn of the puzzle position
   const boardOrientation: 'white' | 'black' = puzzleGame.turn() === 'w' ? 'white' : 'black';
 
+  // Keep a stable ref to solvedPuzzles to prevent initPuzzle from re-creating on every solve
+  const solvedPuzzlesRef = useRef(solvedPuzzles);
+  solvedPuzzlesRef.current = solvedPuzzles;
+
   // Initialize/Reset puzzle state and fetch AI progressive hints
   const initPuzzle = useCallback(
     (index: number) => {
       const targetBlunder = activeBlunders[index] || FALLBACK_BLUNDER;
       setPuzzleIndex(index);
       setPuzzleGame(new Chess(targetBlunder.fenBefore));
-      setSolved(solvedPuzzles.has(index));
+      setSolved(solvedPuzzlesRef.current.has(index));
       setErrorStatus(null);
       setHintLevel(0);
       setLastAttemptSan(null);
@@ -185,16 +189,21 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
           setIsLoadingAiHints(false);
         });
     },
-    [activeBlunders, solvedPuzzles]
+    [activeBlunders]
   );
 
-  // Sync board and state when blunders prop changes
+  // Sync board and state ONLY when the blunder set changes (identified by length & keys)
+  const prevBlundersKeyRef = useRef<string>('');
   useEffect(() => {
-    setPuzzleIndex(0);
-    setSolved(false);
-    setSolvedPuzzles(new Set());
-    initPuzzle(0);
-  }, [blunders, initPuzzle]);
+    const key = activeBlunders.map((b) => `${b.ply}-${b.san}`).join('|');
+    if (prevBlundersKeyRef.current !== key) {
+      prevBlundersKeyRef.current = key;
+      setPuzzleIndex(0);
+      setSolved(false);
+      setSolvedPuzzles(new Set());
+      initPuzzle(0);
+    }
+  }, [activeBlunders, initPuzzle]);
 
   // Scroll chat to bottom when messages update
   useEffect(() => {
