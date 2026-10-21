@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { HelpCircle, Sparkles, Crosshair } from 'lucide-react';
 
 export interface MoveNotationDetails {
@@ -181,9 +181,30 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
   onHoverChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
+  const [align, setAlign] = useState<'center' | 'left' | 'right'>('center');
+  const triggerRef = useRef<HTMLSpanElement>(null);
   const details = parseSanToDetails(san, from, to);
 
   const handleMouseEnter = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      // If less than 330px above trigger in viewport, flip below
+      if (rect.top < 330) {
+        setPlacement('bottom');
+      } else {
+        setPlacement('top');
+      }
+
+      // Check left/right viewport boundaries to avoid side overflow
+      if (rect.left < 160) {
+        setAlign('left');
+      } else if (window.innerWidth - rect.right < 160) {
+        setAlign('right');
+      } else {
+        setAlign('center');
+      }
+    }
     setIsOpen(true);
     onHoverChange?.(true, from, to);
   };
@@ -200,15 +221,30 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
       ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-400 border-dotted hover:bg-emerald-500/10'
       : 'text-sky-600 dark:text-sky-400 border-b-2 border-sky-400 border-dotted hover:bg-sky-500/10';
 
+  const positionClass = placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2.5';
+  const alignClass =
+    align === 'left'
+      ? 'left-0'
+      : align === 'right'
+      ? 'right-0'
+      : 'left-1/2 -translate-x-1/2';
+
+  const caretAlignClass =
+    align === 'left'
+      ? 'left-6'
+      : align === 'right'
+      ? 'right-6'
+      : 'left-1/2 -translate-x-1/2';
+
   return (
     <span
+      ref={triggerRef}
       className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <span
         className={`font-mono font-bold px-1 py-0.5 rounded transition-all cursor-help inline-flex items-center gap-1 ${badgeColorClass} ${className}`}
-        title="Hover to see beginner explanation"
       >
         <span>{san}</span>
         <HelpCircle className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
@@ -216,7 +252,7 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
 
       {/* Popover Card */}
       {isOpen && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 w-72 sm:w-80 p-3.5 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-2xl shadow-2xl shadow-black/60 text-white text-left animate-in fade-in zoom-in-95 duration-150 select-none">
+        <div className={`absolute ${positionClass} ${alignClass} z-50 w-72 sm:w-80 p-3.5 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-2xl shadow-2xl shadow-black/60 text-white text-left animate-in fade-in zoom-in-95 duration-150 select-none`}>
           {/* Header */}
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60 dark:border-slate-800">
             <div className="flex items-center gap-2">
@@ -273,7 +309,11 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
           )}
 
           {/* Tooltip caret */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]" />
+          {placement === 'bottom' ? (
+            <div className={`absolute bottom-full ${caretAlignClass} -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]`} />
+          ) : (
+            <div className={`absolute top-full ${caretAlignClass} -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]`} />
+          )}
         </div>
       )}
     </span>
@@ -321,16 +361,31 @@ const GLOSSARY_TERMS: Record<string, { title: string; desc: string; tip: string 
 
 export const ChessGlossaryHint: React.FC<ChessGlossaryHintProps> = ({ term, children, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
+  const triggerRef = useRef<HTMLSpanElement>(null);
   const info = GLOSSARY_TERMS[term] || {
     title: term,
     desc: 'Chess strategic term',
     tip: 'Practice tactical awareness.',
   };
 
+  const handleMouseEnter = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      if (rect.top < 240) {
+        setPlacement('bottom');
+      } else {
+        setPlacement('top');
+      }
+    }
+    setIsOpen(true);
+  };
+
   return (
     <span
+      ref={triggerRef}
       className="relative inline-block cursor-help"
-      onMouseEnter={() => setIsOpen(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsOpen(false)}
     >
       <span className={`border-b border-dotted border-slate-400 hover:text-sky-500 transition-colors ${className}`}>
@@ -338,7 +393,7 @@ export const ChessGlossaryHint: React.FC<ChessGlossaryHintProps> = ({ term, chil
       </span>
 
       {isOpen && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-64 p-3 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-xl shadow-xl text-white text-xs text-left animate-in fade-in duration-150 select-none">
+        <div className={`absolute ${placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'} left-1/2 -translate-x-1/2 z-50 w-64 p-3 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-xl shadow-xl text-white text-xs text-left animate-in fade-in duration-150 select-none`}>
           <div className="font-bold text-sky-400 text-xs mb-1 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             <span>{info.title}</span>
@@ -347,7 +402,11 @@ export const ChessGlossaryHint: React.FC<ChessGlossaryHintProps> = ({ term, chil
           <div className="text-[10px] text-amber-300 bg-amber-500/10 p-1.5 rounded border border-amber-500/20 leading-tight">
             💡 {info.tip}
           </div>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]" />
+          {placement === 'bottom' ? (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]" />
+          ) : (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]" />
+          )}
         </div>
       )}
     </span>
