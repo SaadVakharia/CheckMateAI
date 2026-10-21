@@ -254,16 +254,16 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
       </div>
 
       {/* GM Alex Post-Game Story Verdict */}
-      <div className="p-6 bg-gradient-to-br from-blue-950/20 via-slate-900/60 to-[#0d172a] border border-blue-900/40 rounded-3xl shadow-sm space-y-4">
+      <div className="p-6 bg-gradient-to-br from-blue-50/90 via-sky-50/50 to-slate-100/70 dark:from-blue-950/20 dark:via-slate-900/60 dark:to-[#0d172a] border border-blue-200/80 dark:border-blue-900/40 rounded-3xl shadow-sm space-y-4 transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-sky-400 font-bold">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/40 flex items-center justify-center text-blue-600 dark:text-sky-400 font-bold">
               <BrainCircuit className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 Grandmaster Alex's Story Review
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-300/80 dark:border-sky-500/20">
                   AI PEDAGOGY
                 </span>
               </h3>
@@ -273,9 +273,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         </div>
 
         {isLoadingNarrative ? (
-          <div className="py-6 flex items-center justify-center gap-2 text-xs text-sky-400">
-            <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-            <span>Grandmaster Alex is synthesizing match insights...</span>
+          <div className="py-6 flex items-center justify-center gap-2 text-xs text-blue-600 dark:text-sky-400">
+            <div className="w-4 h-4 border-2 border-blue-600 dark:border-sky-400 border-t-transparent rounded-full animate-spin" />
+            <span className="font-medium text-slate-600 dark:text-sky-400">Grandmaster Alex is synthesizing match insights...</span>
           </div>
         ) : narrativeData ? (
           <div className="space-y-4">
@@ -285,8 +285,8 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
               {narrativeData.criticalTurningPoint && (
-                <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs space-y-1">
-                  <div className="font-bold text-amber-500 flex items-center gap-1.5">
+                <div className="p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl text-xs space-y-1">
+                  <div className="font-bold text-amber-600 dark:text-amber-500 flex items-center gap-1.5">
                     <TrendingUp className="w-3.5 h-3.5" />
                     <span>Decisive Turning Point</span>
                   </div>
@@ -295,8 +295,8 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
               )}
 
               {narrativeData.keyLesson && (
-                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs space-y-1">
-                  <div className="font-bold text-emerald-500 flex items-center gap-1.5">
+                <div className="p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl text-xs space-y-1">
+                  <div className="font-bold text-emerald-600 dark:text-emerald-500 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Key Training Lesson</span>
                   </div>
@@ -306,7 +306,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
             </div>
           </div>
         ) : (
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Click into move-by-move coaching to inspect individual decisions or explore the advantage chart below.
           </p>
         )}
