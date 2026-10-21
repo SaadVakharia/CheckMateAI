@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build --prefix client",
-  "outputDirectory": "client/dist",
+  "buildCommand": "if [ -d \"client\" ]; then npm run build --prefix client; else npm run build; fi",
+  "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
     {
