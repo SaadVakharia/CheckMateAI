@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { HelpCircle, Sparkles, Crosshair } from 'lucide-react';
 
 export interface MoveNotationDetails {
@@ -181,30 +182,57 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
   onHoverChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
-  const [align, setAlign] = useState<'center' | 'left' | 'right'>('center');
+  const [coords, setCoords] = useState<{
+    top: number;
+    left: number;
+    placement: 'top' | 'bottom';
+    arrowLeft: number;
+  }>({
+    top: 0,
+    left: 0,
+    placement: 'bottom',
+    arrowLeft: 160,
+  });
   const triggerRef = useRef<HTMLSpanElement>(null);
   const details = parseSanToDetails(san, from, to);
 
-  const handleMouseEnter = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      // If less than 330px above trigger in viewport, flip below
-      if (rect.top < 330) {
-        setPlacement('bottom');
-      } else {
-        setPlacement('top');
-      }
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipWidth = Math.min(320, window.innerWidth - 32);
+    const tooltipHeight = 270;
 
-      // Check left/right viewport boundaries to avoid side overflow
-      if (rect.left < 160) {
-        setAlign('left');
-      } else if (window.innerWidth - rect.right < 160) {
-        setAlign('right');
-      } else {
-        setAlign('center');
-      }
+    // Prefer opening below unless there is not enough room below AND plenty of room above
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let placement: 'top' | 'bottom' = 'bottom';
+    let top = 0;
+
+    // If space below is at least 220px or greater than space above, place below!
+    if (spaceBelow >= 220 || spaceBelow >= spaceAbove) {
+      placement = 'bottom';
+      top = rect.bottom + 8;
+    } else {
+      placement = 'top';
+      top = Math.max(16, rect.top - tooltipHeight - 8);
     }
+
+    // Clamp horizontally to stay completely within screen viewport
+    const triggerCenter = rect.left + rect.width / 2;
+    let left = triggerCenter - tooltipWidth / 2;
+    if (left < 16) left = 16;
+    if (left + tooltipWidth > window.innerWidth - 16) {
+      left = window.innerWidth - 16 - tooltipWidth;
+    }
+
+    const arrowLeft = Math.max(16, Math.min(triggerCenter - left, tooltipWidth - 16));
+
+    setCoords({ top, left, placement, arrowLeft });
+  };
+
+  const handleMouseEnter = () => {
+    updatePosition();
     setIsOpen(true);
     onHoverChange?.(true, from, to);
   };
@@ -214,6 +242,17 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
     onHoverChange?.(false, from, to);
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => updatePosition();
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen]);
+
   const badgeColorClass =
     variant === 'blunder'
       ? 'text-red-600 dark:text-red-400 border-b-2 border-red-400 border-dotted hover:bg-red-500/10'
@@ -221,102 +260,113 @@ export const MoveNotationTooltip: React.FC<MoveNotationTooltipProps> = ({
       ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-400 border-dotted hover:bg-emerald-500/10'
       : 'text-sky-600 dark:text-sky-400 border-b-2 border-sky-400 border-dotted hover:bg-sky-500/10';
 
-  const positionClass = placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2.5';
-  const alignClass =
-    align === 'left'
-      ? 'left-0'
-      : align === 'right'
-      ? 'right-0'
-      : 'left-1/2 -translate-x-1/2';
-
-  const caretAlignClass =
-    align === 'left'
-      ? 'left-6'
-      : align === 'right'
-      ? 'right-6'
-      : 'left-1/2 -translate-x-1/2';
-
   return (
-    <span
-      ref={triggerRef}
-      className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <>
       <span
-        className={`font-mono font-bold px-1 py-0.5 rounded transition-all cursor-help inline-flex items-center gap-1 ${badgeColorClass} ${className}`}
+        ref={triggerRef}
+        className="relative inline-block"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        <span>{san}</span>
-        <HelpCircle className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
+        <span
+          className={`font-mono font-bold px-1 py-0.5 rounded transition-all cursor-help inline-flex items-center gap-1 ${badgeColorClass} ${className}`}
+        >
+          <span>{san}</span>
+          <HelpCircle className="w-3 h-3 opacity-60 hover:opacity-100 transition-opacity shrink-0" />
+        </span>
       </span>
 
-      {/* Popover Card */}
-      {isOpen && (
-        <div className={`absolute ${positionClass} ${alignClass} z-50 w-72 sm:w-80 p-3.5 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-2xl shadow-2xl shadow-black/60 text-white text-left animate-in fade-in zoom-in-95 duration-150 select-none`}>
-          {/* Header */}
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <span className="text-xl leading-none">{details.pieceSymbol}</span>
-              <div>
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>{details.pieceName}</span>
-                  <span className="text-[10px] font-mono text-sky-400">({san})</span>
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
+              width: '320px',
+              maxWidth: 'calc(100vw - 32px)',
+              zIndex: 99999,
+            }}
+            onMouseEnter={() => {
+              setIsOpen(true);
+              onHoverChange?.(true, from, to);
+            }}
+            onMouseLeave={handleMouseLeave}
+            className="p-3.5 bg-slate-900/98 dark:bg-[#070c18]/98 backdrop-blur-2xl border border-sky-500/40 rounded-2xl shadow-2xl shadow-black/80 text-white text-left animate-in fade-in zoom-in-95 duration-150 select-none pointer-events-auto"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xl leading-none">{details.pieceSymbol}</span>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>{details.pieceName}</span>
+                    <span className="text-[10px] font-mono text-sky-400">({san})</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-medium">Chess Notation Guide</div>
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium">Chess Notation Guide</div>
+              </div>
+
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                BEGINNER HINT
+              </span>
+            </div>
+
+            {/* Plain English Translation */}
+            <div className="p-2 bg-slate-800/60 dark:bg-slate-900/80 rounded-xl border border-slate-700/40 text-xs text-sky-200 leading-snug font-medium mb-2.5">
+              "{details.plainEnglish}"
+            </div>
+
+            {/* Token Breakdown */}
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                How to read "{san}":
+              </div>
+              <div className="grid grid-cols-1 gap-1">
+                {details.breakdown.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-800/40 border border-slate-700/30 text-[11px]"
+                  >
+                    <span className="font-mono font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded">
+                      {item.token}
+                    </span>
+                    <span className="text-slate-300 font-semibold">{item.label}</span>
+                    <span className="text-slate-400 text-[10px] truncate max-w-[120px]">{item.meaning}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
-              BEGINNER HINT
-            </span>
-          </div>
+            {/* Source / Target Coordinate indicator */}
+            {details.sourceSquare && details.targetSquare && (
+              <div className="mt-2.5 pt-2 border-t border-slate-700/60 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Crosshair className="w-3 h-3 text-sky-400" />
+                  From <strong className="text-white font-mono">{details.sourceSquare}</strong> ➔ To{' '}
+                  <strong className="text-white font-mono">{details.targetSquare}</strong>
+                </span>
+                <span className="text-sky-400 font-bold">Highlighted on board</span>
+              </div>
+            )}
 
-          {/* Plain English Translation */}
-          <div className="p-2 bg-slate-800/60 dark:bg-slate-900/80 rounded-xl border border-slate-700/40 text-xs text-sky-200 leading-snug font-medium mb-2.5">
-            "{details.plainEnglish}"
-          </div>
-
-          {/* Token Breakdown */}
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              How to read "{san}":
-            </div>
-            <div className="grid grid-cols-1 gap-1">
-              {details.breakdown.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-800/40 border border-slate-700/30 text-[11px]"
-                >
-                  <span className="font-mono font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded">
-                    {item.token}
-                  </span>
-                  <span className="text-slate-300 font-semibold">{item.label}</span>
-                  <span className="text-slate-400 text-[10px] truncate max-w-[120px]">{item.meaning}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Source / Target Coordinate indicator */}
-          {details.sourceSquare && details.targetSquare && (
-            <div className="mt-2.5 pt-2 border-t border-slate-700/60 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <Crosshair className="w-3 h-3 text-sky-400" />
-                From <strong className="text-white font-mono">{details.sourceSquare}</strong> ➔ To <strong className="text-white font-mono">{details.targetSquare}</strong>
-              </span>
-              <span className="text-sky-400 font-bold">Highlighted on board</span>
-            </div>
-          )}
-
-          {/* Tooltip caret */}
-          {placement === 'bottom' ? (
-            <div className={`absolute bottom-full ${caretAlignClass} -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]`} />
-          ) : (
-            <div className={`absolute top-full ${caretAlignClass} -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]`} />
-          )}
-        </div>
-      )}
-    </span>
+            {/* Tooltip caret */}
+            {coords.placement === 'bottom' ? (
+              <div
+                style={{ left: `${coords.arrowLeft}px` }}
+                className="absolute bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]"
+              />
+            ) : (
+              <div
+                style={{ left: `${coords.arrowLeft}px` }}
+                className="absolute top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]"
+              />
+            )}
+          </div>,
+          document.body
+        )}
+    </>
   );
 };
 
@@ -361,7 +411,17 @@ const GLOSSARY_TERMS: Record<string, { title: string; desc: string; tip: string 
 
 export const ChessGlossaryHint: React.FC<ChessGlossaryHintProps> = ({ term, children, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
+  const [coords, setCoords] = useState<{
+    top: number;
+    left: number;
+    placement: 'top' | 'bottom';
+    arrowLeft: number;
+  }>({
+    top: 0,
+    left: 0,
+    placement: 'bottom',
+    arrowLeft: 130,
+  });
   const triggerRef = useRef<HTMLSpanElement>(null);
   const info = GLOSSARY_TERMS[term] || {
     title: term,
@@ -369,46 +429,106 @@ export const ChessGlossaryHint: React.FC<ChessGlossaryHintProps> = ({ term, chil
     tip: 'Practice tactical awareness.',
   };
 
-  const handleMouseEnter = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      if (rect.top < 240) {
-        setPlacement('bottom');
-      } else {
-        setPlacement('top');
-      }
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipWidth = 260;
+    const tooltipHeight = 160;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let placement: 'top' | 'bottom' = 'bottom';
+    let top = 0;
+
+    if (spaceBelow >= tooltipHeight + 16 || spaceBelow >= spaceAbove) {
+      placement = 'bottom';
+      top = rect.bottom + 8;
+    } else {
+      placement = 'top';
+      top = Math.max(16, rect.top - tooltipHeight - 8);
     }
+
+    const triggerCenter = rect.left + rect.width / 2;
+    let left = triggerCenter - tooltipWidth / 2;
+    if (left < 16) left = 16;
+    if (left + tooltipWidth > window.innerWidth - 16) {
+      left = window.innerWidth - 16 - tooltipWidth;
+    }
+
+    const arrowLeft = Math.max(16, Math.min(triggerCenter - left, tooltipWidth - 16));
+
+    setCoords({ top, left, placement, arrowLeft });
+  };
+
+  const handleMouseEnter = () => {
+    updatePosition();
     setIsOpen(true);
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => updatePosition();
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen]);
+
   return (
-    <span
-      ref={triggerRef}
-      className="relative inline-block cursor-help"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <span className={`border-b border-dotted border-slate-400 hover:text-sky-500 transition-colors ${className}`}>
-        {children}
+    <>
+      <span
+        ref={triggerRef}
+        className="relative inline-block cursor-help"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsOpen(false)}
+      >
+        <span className={`border-b border-dotted border-slate-400 hover:text-sky-500 transition-colors ${className}`}>
+          {children}
+        </span>
       </span>
 
-      {isOpen && (
-        <div className={`absolute ${placement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'} left-1/2 -translate-x-1/2 z-50 w-64 p-3 bg-slate-900/95 dark:bg-[#070c18]/95 backdrop-blur-xl border border-sky-500/30 rounded-xl shadow-xl text-white text-xs text-left animate-in fade-in duration-150 select-none`}>
-          <div className="font-bold text-sky-400 text-xs mb-1 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{info.title}</span>
-          </div>
-          <p className="text-[11px] text-slate-300 leading-relaxed mb-1.5">{info.desc}</p>
-          <div className="text-[10px] text-amber-300 bg-amber-500/10 p-1.5 rounded border border-amber-500/20 leading-tight">
-            💡 {info.tip}
-          </div>
-          {placement === 'bottom' ? (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]" />
-          ) : (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]" />
-          )}
-        </div>
-      )}
-    </span>
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: `${coords.top}px`,
+              left: `${coords.left}px`,
+              width: '260px',
+              maxWidth: 'calc(100vw - 32px)',
+              zIndex: 99999,
+            }}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+            className="p-3 bg-slate-900/98 dark:bg-[#070c18]/98 backdrop-blur-2xl border border-sky-500/40 rounded-xl shadow-2xl text-white text-xs text-left animate-in fade-in duration-150 select-none pointer-events-auto"
+          >
+            <div className="font-bold text-sky-400 text-xs mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{info.title}</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed mb-1.5">{info.desc}</p>
+            <div className="text-[10px] text-amber-300 bg-amber-500/10 p-1.5 rounded border border-amber-500/20 leading-tight">
+              💡 {info.tip}
+            </div>
+
+            {coords.placement === 'bottom' ? (
+              <div
+                style={{ left: `${coords.arrowLeft}px` }}
+                className="absolute bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-slate-900 dark:border-b-[#070c18]"
+              />
+            ) : (
+              <div
+                style={{ left: `${coords.arrowLeft}px` }}
+                className="absolute top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-[#070c18]"
+              />
+            )}
+          </div>,
+          document.body
+        )}
+    </>
   );
 };
