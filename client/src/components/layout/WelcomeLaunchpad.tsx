@@ -106,11 +106,11 @@ export const WelcomeLaunchpad: React.FC<WelcomeLaunchpadProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-4xl bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-colors">
         {/* Header Hero */}
-        <div className="relative p-6 sm:p-8 bg-gradient-to-br from-blue-900/30 via-slate-900/20 to-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
+        <div className="relative p-6 sm:p-8 bg-gradient-to-br from-blue-50/90 via-sky-50/50 to-slate-100/70 dark:from-blue-900/30 dark:via-slate-900/20 dark:to-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col items-center text-center transition-colors">
           {hasActiveGame && (
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition cursor-pointer"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800/60 rounded-xl transition cursor-pointer"
               title="Close Launchpad"
             >
               <X className="w-5 h-5" />
