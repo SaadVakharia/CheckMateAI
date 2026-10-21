@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { aiCoachService } from '../services/aiCoachService';
-import type { ExplainMoveRequest, CoachChatRequest, GameSummaryRequest } from '../types';
+import { aiCoachService } from './services/aiCoachService';
+import type { ExplainMoveRequest, CoachChatRequest, GameSummaryRequest } from './types';
 
 export class CoachController {
   public static async explainMove(req: Request, res: Response): Promise<void> {

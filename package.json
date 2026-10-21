@@ -2,9 +2,12 @@
   "name": "checkmate-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "CheckMate AI",
+  "description": "CheckMate AI - Chess Analysis with AI Coach",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "build": "npm run build --prefix client"
+    "build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
