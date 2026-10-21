@@ -1,0 +1,17 @@
+{
+  "name": "checkmate-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CheckMate AI",
+  "scripts": {
+    "build": "npm run build --prefix client"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "chess.js": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

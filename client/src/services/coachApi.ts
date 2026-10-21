@@ -2,6 +2,8 @@ import type { MoveAnalysis } from '../types/chess';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/coach`
+  : typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+  ? '/api/coach'
   : 'http://localhost:3001/api/coach';
 
 export interface CoachExplanation {
