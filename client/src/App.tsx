@@ -5,7 +5,6 @@ import { InteractiveBoard } from './components/board/InteractiveBoard';
 import { EvalGraph } from './components/analysis/EvalGraph';
 import { MoveTable } from './components/analysis/MoveTable';
 import { CoachChatDrawer } from './components/coach/CoachChatDrawer';
-import { GameReviewPanel } from './components/analysis/GameReviewPanel';
 import { MistakePuzzlePlayer } from './components/puzzles/MistakePuzzlePlayer';
 import { PlatformSyncModal } from './components/importer/PlatformSyncModal';
 import { PGNModal } from './components/importer/PGNModal';
@@ -17,12 +16,16 @@ import { centipawnsToWinPercent, classifyMove } from './analyzer/evaluator';
 import { isTheoryMove } from './analyzer/ecoBook';
 import { analyzeTactics } from './analyzer/tactics';
 import { sounds } from './utils/sound';
+import { WorkflowStepper, type WorkflowStep } from './components/layout/WorkflowStepper';
+import { WelcomeLaunchpad } from './components/layout/WelcomeLaunchpad';
+import { MatchReportView } from './components/analysis/MatchReportView';
 import { ThemeProvider } from './context/ThemeContext';
 import { stockfishEngine } from './engine/stockfishWorker';
 import type { EngineEvaluation } from './engine/stockfishWorker';
 
 export function ChessApp() {
-  const [activeTab, setActiveTab] = useState<'board' | 'review' | 'puzzles' | 'analytics'>('board');
+  const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('report');
+  const [isLaunchpadOpen, setIsLaunchpadOpen] = useState<boolean>(true);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPgnModalOpen, setIsPgnModalOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'moves' | 'coach' | 'engine'>('moves');
@@ -247,6 +250,10 @@ export function ChessApp() {
           handleStartDeepScan(10, pgnString);
         }, 200);
       }
+
+      // Transition smoothly into Step 2: Match Report
+      setWorkflowStep('report');
+      setIsLaunchpadOpen(false);
     } catch (err) {
       console.error('Failed to load PGN', err);
     }
@@ -255,6 +262,7 @@ export function ChessApp() {
   // Initialize with preloaded match on first load (runs strictly once on mount)
   useEffect(() => {
     loadPgnIntoState(PRELOADED_GAMES[0].pgn, PRELOADED_GAMES[0].title);
+    setIsLaunchpadOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -445,21 +453,51 @@ export function ChessApp() {
 
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
-      {/* Navbar (fixed top) */}
+      {/* Navbar & Stepper (fixed top) */}
       <div className="shrink-0">
         <Navbar
-          activeTab={activeTab}
-          onChangeTab={setActiveTab}
+          activeTab={workflowStep === 'report' ? 'review' : workflowStep === 'board' ? 'board' : 'puzzles'}
+          onChangeTab={(tab) => setWorkflowStep(tab === 'review' ? 'report' : tab === 'board' ? 'board' : 'puzzles')}
           onOpenSync={() => setIsSyncModalOpen(true)}
           onOpenPgn={() => setIsPgnModalOpen(true)}
           onResetGame={handleResetGame}
+        />
+        <WorkflowStepper
+          currentStep={workflowStep}
+          onSelectStep={setWorkflowStep}
+          gameTitle={gameTitle}
+          blundersCount={blunderList.length}
+          movesCount={analyses.length}
+          isScanning={isScanning}
+          scanProgress={scanProgress}
+          onOpenLaunchpad={() => setIsLaunchpadOpen(true)}
         />
       </div>
 
       {/* Main Viewport Content Area (locked height, zero outer scroll) */}
       <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col overflow-hidden">
-        {/* Tab 1: Analysis Board */}
-        {activeTab === 'board' && (
+        {/* Step 2: Match Report */}
+        {workflowStep === 'report' && (
+          <MatchReportView
+            analyses={analyses}
+            whiteName={players.white}
+            blackName={players.black}
+            whiteElo={players.whiteElo}
+            blackElo={players.blackElo}
+            gameTitle={gameTitle}
+            isScanning={isScanning}
+            scanProgress={scanProgress}
+            onSelectPly={(ply) => {
+              goToPly(ply);
+              setWorkflowStep('board');
+            }}
+            onProceedToCoach={() => setWorkflowStep('board')}
+            onGoToPuzzles={() => setWorkflowStep('puzzles')}
+          />
+        )}
+
+        {/* Step 3: Analysis Board & GM Coach */}
+        {workflowStep === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
             {/* Left: Match Info + Interactive Board & Controls (6 Cols) */}
             <div className="lg:col-span-6 h-full flex flex-col min-h-0 gap-1.5">
@@ -799,83 +837,45 @@ export function ChessApp() {
                     </div>
                   </div>
                 )}
+
+                {/* Progression Footer to Step 4: Retrain Blunders */}
+                {blunderList.length > 0 && (
+                  <div className="p-2.5 bg-slate-50 dark:bg-[#070c18] border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs shrink-0 rounded-b-2xl">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+                      {blunderList.length} tactical mistakes detected
+                    </span>
+                    <button
+                      onClick={() => setWorkflowStep('puzzles')}
+                      className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-red-500/20 text-xs"
+                    >
+                      <span>Step 4: Retrain Mistakes</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: Game Review (Side-by-Side Board & Chess.com Game Review Sidebar) */}
-        {activeTab === 'review' && (
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
-            {/* Left: Match Info + Interactive Board */}
-            <div className="lg:col-span-6 h-full flex flex-col min-h-0 gap-1.5">
-              {/* Compact Match Header */}
-              <div className="flex items-center justify-between px-3 py-1 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
-                <div className="flex items-center space-x-2 text-xs min-w-0">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Match:</span>
-                  <span className="font-bold text-slate-900 dark:text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">{gameTitle}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
-                  {analyses.length} moves • {blunderList.length} blunders
-                </div>
-              </div>
-
-              <div className="flex-1 min-h-0">
-                <InteractiveBoard
-                  game={chessInstance}
-                  scoreCp={activeScoreCp}
-                  mate={liveEvaluation.mate}
-                  isFlipped={isFlipped}
-                  bestMove={currentPositionBestMove}
-                  secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
-                  currentAnalysis={currentAnalysis}
-                  currentPly={currentPly}
-                  totalPlies={analyses.length}
-                  isPlaying={isPlaying}
-                  isMuted={isMuted}
-                  players={players}
-                  onRetryMove={() => {
-                    if (currentPly > 0) goToPly(currentPly - 1);
-                  }}
-                  onMakeMove={handleMakeMove}
-                  onFirst={() => goToPly(0)}
-                  onPrev={() => goToPly(currentPly - 1)}
-                  onNext={() => goToPly(currentPly + 1)}
-                  onLast={() => goToPly(analyses.length)}
-                  onTogglePlay={() => setIsPlaying(!isPlaying)}
-                  onFlipBoard={() => setIsFlipped(!isFlipped)}
-                  onToggleMute={() => {
-                    const next = !isMuted;
-                    setIsMuted(next);
-                    sounds.setMuted(next);
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Right: CheckMate AI Game Review Panel */}
-            <div className="lg:col-span-6 h-full flex flex-col min-h-0 overflow-hidden">
-              <GameReviewPanel
-                analyses={analyses}
-                currentPly={currentPly}
-                whiteName={players.white}
-                blackName={players.black}
-                whiteElo={players.whiteElo}
-                blackElo={players.blackElo}
-                onSelectPly={(ply) => goToPly(ply)}
-                onGoToPuzzles={() => setActiveTab('puzzles')}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Mistake Puzzles */}
-        {activeTab === 'puzzles' && (
-          <div className="flex-1 min-h-0 w-full overflow-y-auto flex items-center justify-center">
+        {/* Step 4: Mistake Puzzles Workout */}
+        {workflowStep === 'puzzles' && (
+          <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center justify-center p-2">
             <MistakePuzzlePlayer blunders={blunderList} />
           </div>
         )}
       </main>
+
+      {/* Welcome Launchpad Modal (First Load Hero & Match Selector) */}
+      <WelcomeLaunchpad
+        isOpen={isLaunchpadOpen}
+        onClose={() => setIsLaunchpadOpen(false)}
+        onSelectGame={(pgn, title) => {
+          loadPgnIntoState(pgn, title);
+          setWorkflowStep('report');
+        }}
+        hasActiveGame={analyses.length > 0}
+      />
 
       {/* Platform 1-Click Sync Modal */}
       <PlatformSyncModal
@@ -883,7 +883,7 @@ export function ChessApp() {
         onClose={() => setIsSyncModalOpen(false)}
         onSelectGame={(pgn, title) => {
           loadPgnIntoState(pgn, title);
-          setActiveTab('board');
+          setWorkflowStep('report');
         }}
       />
 
@@ -895,7 +895,7 @@ export function ChessApp() {
         currentFen={chessInstance.fen()}
         onLoadPgn={(pgn) => {
           loadPgnIntoState(pgn);
-          setActiveTab('board');
+          setWorkflowStep('report');
         }}
         onLoadFen={(fen) => {
           try {
@@ -903,6 +903,7 @@ export function ChessApp() {
             setChessInstance(g);
             setAnalyses([]);
             setCurrentPly(0);
+            setWorkflowStep('board');
           } catch {
             alert('Invalid FEN');
           }
