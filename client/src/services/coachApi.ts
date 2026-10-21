@@ -72,12 +72,33 @@ export async function explainMoveWithCoach(analysis: MoveAnalysis): Promise<Coac
   }
 }
 
+export interface PuzzleHintsData {
+  hint1: string;
+  hint2: string;
+  hint3: string;
+  source: 'gemini' | 'heuristic';
+}
+
+export interface PuzzleContextParam {
+  isPuzzleWorkout?: boolean;
+  blunderSan?: string;
+  blunderFrom?: string;
+  blunderTo?: string;
+  bestMove?: string;
+  tacticalMotifs?: string[];
+  hintLevel?: number;
+  hintsGiven?: string[];
+  lastUserAttempt?: string;
+  solved?: boolean;
+}
+
 export async function askCoachChat(
   fen: string,
   question: string,
   playerSide: 'w' | 'b' = 'w',
   currentAnalysis?: MoveAnalysis,
-  chatHistory?: { role: 'user' | 'assistant'; content: string }[]
+  chatHistory?: { role: 'user' | 'assistant'; content: string }[],
+  puzzleContext?: PuzzleContextParam
 ): Promise<CoachAnswer> {
   try {
     const res = await fetch(`${API_BASE_URL}/chat`, {
@@ -91,6 +112,7 @@ export async function askCoachChat(
         classification: currentAnalysis?.classification,
         bestMove: currentAnalysis?.bestMove,
         chatHistory: chatHistory?.slice(-4),
+        puzzleContext,
       }),
     });
 
@@ -112,6 +134,42 @@ export async function askCoachChat(
         'What is my opponent planning next?',
         'Which piece should I improve?',
       ],
+      source: 'heuristic',
+    };
+  }
+}
+
+export async function fetchPuzzleHints(params: {
+  fen: string;
+  playerSide?: 'w' | 'b';
+  blunderSan: string;
+  blunderFrom?: string;
+  blunderTo?: string;
+  bestMove?: string;
+  bestMoveUci?: string;
+  tacticalMotifs?: string[];
+  playerIntent?: string;
+}): Promise<PuzzleHintsData> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/puzzle-hints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch {
+    const opponentColor = params.playerSide === 'w' ? 'Black' : 'White';
+    return {
+      hint1: `Examine ${opponentColor}'s blunder (${params.blunderSan}). Notice which square or piece was left unguarded. Look for active piece coordination.`,
+      hint2:
+        params.tacticalMotifs && params.tacticalMotifs.length > 0
+          ? `Tactical Theme: ${params.tacticalMotifs.map((m) => m.replace(/_/g, ' ')).join(', ')}. Look for an unparryable forcing sequence.`
+          : `Tactical Theme: Exploiting loose pieces and king exposure.`,
+      hint3: params.bestMove
+        ? `The winning tactical refutation is **${params.bestMove}**!`
+        : `Look for the most forcing check or capture available.`,
       source: 'heuristic',
     };
   }

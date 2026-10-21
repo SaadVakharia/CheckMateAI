@@ -35,6 +35,22 @@ export class CoachController {
     }
   }
 
+  public static async generatePuzzleHints(req: Request, res: Response): Promise<void> {
+    try {
+      const body = req.body;
+      if (!body.fen || !body.blunderSan) {
+        res.status(400).json({ error: 'Missing required fields: fen, blunderSan' });
+        return;
+      }
+
+      const result = await aiCoachService.generatePuzzleHints(body);
+      res.json(result);
+    } catch (err: any) {
+      console.error('Error in generatePuzzleHints controller:', err);
+      res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+  }
+
   public static async generateGameSummary(req: Request, res: Response): Promise<void> {
     try {
       const body = req.body as GameSummaryRequest;

@@ -6,6 +6,8 @@ import type {
   CoachChatResponse,
   GameSummaryRequest,
   GameSummaryResponse,
+  PuzzleHintsRequest,
+  PuzzleHintsResponse,
 } from '../types';
 
 export class PedagogyHeuristics {
@@ -100,6 +102,48 @@ export class PedagogyHeuristics {
 
     let answer = '';
     let suggestedQuestions: string[] = [];
+
+    // Puzzle Workout Q&A context
+    if (req.puzzleContext?.isPuzzleWorkout) {
+      const { blunderSan, bestMove: pBestMove, tacticalMotifs, lastUserAttempt, solved } = req.puzzleContext;
+      if (solved) {
+        return {
+          answer: `Magnificent work! You found the winning refutation (${pBestMove || 'top move'}). Notice how ruthlessly it exploited the opponent's blunder (${blunderSan || 'blunder'}).`,
+          suggestedQuestions: ['What made that move so powerful?', 'How can I spot this tactic in my own games?'],
+          source: 'heuristic',
+        };
+      }
+
+      if (
+        lowerQ.includes('why') &&
+        (lowerQ.includes('wrong') || lowerQ.includes('fail') || lowerQ.includes('attempt') || (lastUserAttempt && lowerQ.includes(lastUserAttempt.toLowerCase())))
+      ) {
+        return {
+          answer: lastUserAttempt
+            ? `Your move ${lastUserAttempt} was a reasonable idea, but it doesn't apply maximum forcing pressure. It allows the opponent a defensive tempo. Look for forcing moves (checks, captures, or unparryable threats)!`
+            : `That attempt gives the opponent time to consolidate. Remember: in tactical positions, calculate checks, captures, and immediate threats first!`,
+          suggestedQuestions: ['Give me a subtle hint', 'What piece should I focus on?'],
+          source: 'heuristic',
+        };
+      }
+
+      if (lowerQ.includes('hint') || lowerQ.includes('help') || lowerQ.includes('clue') || lowerQ.includes('where')) {
+        const motifsStr = tacticalMotifs && tacticalMotifs.length > 0 ? tacticalMotifs.join(', ') : 'undefended piece';
+        return {
+          answer: `Examine the opponent's blunder (${blunderSan || 'last move'}). Notice what piece or square was left unguarded. The key tactical theme is **${motifsStr}**.`,
+          suggestedQuestions: ['Which piece should I move?', 'Is there a check available?'],
+          source: 'heuristic',
+        };
+      }
+
+      if (lowerQ.includes('threat') || lowerQ.includes('planning')) {
+        return {
+          answer: `The opponent made a tactical blunder, but if you don't punish it quickly, they will consolidate. You have an immediate winning window!`,
+          suggestedQuestions: ['Give me a hint for the best move', 'Why was their move a blunder?'],
+          source: 'heuristic',
+        };
+      }
+    }
 
     try {
       const chess = new Chess(fen);
@@ -284,6 +328,45 @@ Always ask yourself: *'What did my opponent's last move threaten?'* before makin
       blackHighlights,
       criticalTurningPoint,
       keyLesson,
+      source: 'heuristic',
+    };
+  }
+
+  /**
+   * Generates 3 progressive pedagogical hints for a blunder puzzle.
+   */
+  public static generatePuzzleHints(req: PuzzleHintsRequest): PuzzleHintsResponse {
+    const { playerSide = 'w', blunderSan, bestMove, tacticalMotifs, playerIntent } = req;
+    const playerColor = playerSide === 'w' ? 'White' : 'Black';
+    const opponentColor = playerSide === 'w' ? 'Black' : 'White';
+
+    // Hint 1: Directional
+    let hint1 = `Examine ${opponentColor}'s last move (${blunderSan}). Notice how it left a critical piece or square vulnerable. Look at your active pieces that can coordinate a forcing strike.`;
+    if (blunderSan.startsWith('B') || blunderSan.startsWith('N')) {
+      hint1 = `Notice the minor piece ${blunderSan} stepped into an exposed square without sufficient protection. Search for ways ${playerColor} can coordinate an attack against it.`;
+    } else if (blunderSan.startsWith('Q')) {
+      hint1 = `The enemy Queen move (${blunderSan}) was premature. Look for tactics where you can attack high-value pieces with tempo.`;
+    }
+
+    // Hint 2: Tactical Motif & Mechanism
+    const motifs =
+      tacticalMotifs && tacticalMotifs.length > 0
+        ? tacticalMotifs.map((m) => m.replace(/_/g, ' ')).join(', ')
+        : 'hanging piece / double attack';
+    let hint2 = `Tactical Theme: ${motifs}. Look for a forcing check, capture, or multi-target threat that ${opponentColor} cannot parry in one turn.`;
+    if (playerIntent) {
+      hint2 += ` ${opponentColor} hoped: "${playerIntent}", but left open a tactical refutation!`;
+    }
+
+    // Hint 3: Concrete Winning Move
+    const hint3 = bestMove
+      ? `The decisive refutation is **${bestMove}**! This move dismantles the defense and immediately swings the position in ${playerColor}'s favor.`
+      : `Look for the most forcing candidate move that directly attacks the target piece or delivers check.`;
+
+    return {
+      hint1,
+      hint2,
+      hint3,
       source: 'heuristic',
     };
   }

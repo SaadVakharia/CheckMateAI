@@ -7,6 +7,8 @@ import type {
   CoachChatResponse,
   GameSummaryRequest,
   GameSummaryResponse,
+  PuzzleHintsRequest,
+  PuzzleHintsResponse,
 } from '../types';
 
 function extractAndParseJson<T>(rawText: string): T {
@@ -119,11 +121,30 @@ Do NOT wrap in markdown fences or triple backticks if possible, just raw JSON.
         ? req.chatHistory.map((m) => `${m.role === 'user' ? 'Student' : 'GM Alex'}: ${m.content}`).join('\n')
         : '';
 
+      const isPuzzleMode = req.puzzleContext?.isPuzzleWorkout;
+      const puzzleSection = isPuzzleMode
+        ? `
+SPECIAL MODE: MISTAKE PUZZLE WORKOUT
+The student is actively solving a tactical puzzle derived from a real blunder!
+- Opponent's Blunder: ${req.puzzleContext?.blunderSan || req.currentMoveSan || 'N/A'}
+- Winning Refutation (Target Move): ${req.puzzleContext?.bestMove || req.bestMove || 'N/A'}
+- Tactical Motifs: ${req.puzzleContext?.tacticalMotifs?.join(', ') || 'N/A'}
+- Hints Revealed So Far: ${req.puzzleContext?.hintsGiven?.join(' | ') || 'None yet'}
+- Student's Last Attempted Move: ${req.puzzleContext?.lastUserAttempt || 'None'}
+- Puzzle Solved Status: ${req.puzzleContext?.solved ? 'SOLVED' : 'IN PROGRESS'}
+
+Puzzle Directives:
+- If the puzzle is IN PROGRESS: Guide the student with Socratic clues, tactical motifs, and questions. Do NOT reveal the exact move unless they explicitly ask for the final answer!
+- If they ask why an attempted move failed, explain the tactical refutation against it.
+- Keep the response encouraging, concise (2-4 sentences), and pedagogically focused.
+`
+        : '';
+
       const prompt = `
-You are Grandmaster Alex, a friendly, insightful chess coach having a live pair-programming analysis session with a student.
+You are Grandmaster Alex, a friendly, insightful chess coach having a live session with a student.
 Answer the student's question directly, clearly, and concisely (2-4 sentences max).
 Highlight strategic themes, piece coordination, and concrete tactical reasons.
-
+${puzzleSection}
 Board Context:
 - Active FEN: "${req.fen}"
 - Side to Move: ${req.playerSide === 'w' ? 'White' : 'Black'}
@@ -158,6 +179,65 @@ Return JSON strictly matching:
     } catch (err) {
       console.warn('Gemini chat failed, falling back to heuristics:', err);
       return PedagogyHeuristics.answerQuestion(req);
+    }
+  }
+
+  /**
+   * Generates 3 progressive pedagogical hints tailored for a blunder puzzle.
+   */
+  public async generatePuzzleHints(req: PuzzleHintsRequest): Promise<PuzzleHintsResponse> {
+    const client = this.getGenAI();
+    if (!client) {
+      return PedagogyHeuristics.generatePuzzleHints(req);
+    }
+
+    try {
+      const model = client.getGenerativeModel({ model: this.modelName });
+      const playerColor = req.playerSide === 'w' ? 'White' : 'Black';
+
+      const prompt = `
+You are Grandmaster Alex, an expert chess coach helping a student solve a puzzle based on an actual blunder.
+Context:
+- Board FEN: "${req.fen}"
+- Student plays as: ${playerColor}
+- Opponent's Blunder: ${req.blunderSan}
+- Target Winning Refutation (Best Move): ${req.bestMove || 'N/A'}
+- Tactical Motifs: ${req.tacticalMotifs?.join(', ') || 'hanging piece / double attack'}
+- Opponent's Intent: ${req.playerIntent || 'overlooked tactical defense'}
+
+Formulate 3 progressive hints for this blunder refutation:
+- "hint1": A directional clue. Gently point the student's attention to the crucial piece, board sector, or undefended element WITHOUT naming the piece or move. (1-2 sentences).
+- "hint2": A tactical theme clue. Explicitly name the tactical motif (e.g. pin, fork, overloaded defender, back-rank) and explain what mechanical weakness can be exploited. (1-2 sentences).
+- "hint3": The full refutation solution. Reveal the winning move "${req.bestMove || ''}" and clearly explain the tactical sequence that wins material or delivers mate. (1-2 sentences).
+
+Return JSON strictly matching:
+{
+  "hint1": "...",
+  "hint2": "...",
+  "hint3": "..."
+}
+`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      const parsed = extractAndParseJson<{
+        hint1?: string;
+        hint2?: string;
+        hint3?: string;
+      }>(text);
+
+      if (parsed.hint1 && parsed.hint2 && parsed.hint3) {
+        return {
+          hint1: parsed.hint1,
+          hint2: parsed.hint2,
+          hint3: parsed.hint3,
+          source: 'gemini',
+        };
+      }
+      return PedagogyHeuristics.generatePuzzleHints(req);
+    } catch (err) {
+      console.warn('Gemini puzzle hints generation failed, falling back to heuristics:', err);
+      return PedagogyHeuristics.generatePuzzleHints(req);
     }
   }
 
