@@ -260,7 +260,12 @@ Match Stats:
 - Opening: ${req.openingName || 'Standard Opening'} (${req.openingEco || 'Theory'})
 - White Accuracy: ${req.whiteAccuracy}% (ACPL: ${req.whiteAcpl} cp)
 - Black Accuracy: ${req.blackAccuracy}% (ACPL: ${req.blackAcpl} cp)
-- Critical Mistakes / Blunders Count: ${req.blundersCount}
+- Total Critical Mistakes / Blunders Count: ${req.blundersCount}
+
+IMPORTANT ACCURACY CONSTRAINTS:
+- When mentioning accuracy percentages, mistake counts, or blunder counts, you MUST strictly use the exact numbers provided above.
+- NEVER exaggerate, invent, or use phrases like "nearly two dozen mistakes" or unverified counts. If ${req.blundersCount} is small (e.g. 0 to 12), reflect that realistic quantity.
+- Keep the tone pedagogical, encouraging, and focused on actionable chess improvement.
 
 Return JSON strictly matching:
 {

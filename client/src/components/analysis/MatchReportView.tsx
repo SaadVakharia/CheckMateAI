@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Zap,
   Target,
-  ArrowRight,
   Sparkles,
   BookOpen,
   BrainCircuit,
   TrendingUp,
+  Play,
 } from 'lucide-react';
 import type { MoveAnalysis } from '../../types/chess';
 import {
@@ -30,6 +30,10 @@ interface MatchReportViewProps {
   onSelectPly: (ply: number) => void;
   isScanning?: boolean;
   scanProgress?: number;
+  platformAccuracies?: {
+    white?: number;
+    black?: number;
+  };
 }
 
 export const MatchReportView: React.FC<MatchReportViewProps> = ({
@@ -38,6 +42,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
   blackName = 'Black',
   whiteElo,
   blackElo,
+  platformAccuracies,
   gameTitle,
   onProceedToCoach,
   onGoToPuzzles,
@@ -51,20 +56,23 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
   const whiteMoves = useMemo(() => analyses.filter((m) => m.ply % 2 !== 0), [analyses]);
   const blackMoves = useMemo(() => analyses.filter((m) => m.ply % 2 === 0), [analyses]);
 
-  const whiteAccuracy = useMemo(() => calculateAccuracy(whiteMoves), [whiteMoves]);
-  const blackAccuracy = useMemo(() => calculateAccuracy(blackMoves), [blackMoves]);
+  const computedWhiteAccuracy = useMemo(() => calculateAccuracy(whiteMoves), [whiteMoves]);
+  const computedBlackAccuracy = useMemo(() => calculateAccuracy(blackMoves), [blackMoves]);
+
+  const whiteAccuracy = platformAccuracies?.white !== undefined ? platformAccuracies.white : computedWhiteAccuracy;
+  const blackAccuracy = platformAccuracies?.black !== undefined ? platformAccuracies.black : computedBlackAccuracy;
 
   const whiteAcpl = useMemo(() => calculateACPL(whiteMoves), [whiteMoves]);
   const blackAcpl = useMemo(() => calculateACPL(blackMoves), [blackMoves]);
 
   const whiteRating = useMemo(() => {
-    if (whiteElo && parseInt(whiteElo, 10)) return parseInt(whiteElo, 10);
-    return estimatePerformanceRating(whiteAccuracy, whiteAcpl);
+    const base = whiteElo ? parseInt(whiteElo, 10) : undefined;
+    return estimatePerformanceRating(whiteAccuracy, whiteAcpl, base);
   }, [whiteElo, whiteAccuracy, whiteAcpl]);
 
   const blackRating = useMemo(() => {
-    if (blackElo && parseInt(blackElo, 10)) return parseInt(blackElo, 10);
-    return estimatePerformanceRating(blackAccuracy, blackAcpl);
+    const base = blackElo ? parseInt(blackElo, 10) : undefined;
+    return estimatePerformanceRating(blackAccuracy, blackAcpl, base);
   }, [blackElo, blackAccuracy, blackAcpl]);
 
   const openingInfo = useMemo(() => {
@@ -183,11 +191,10 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={onProceedToCoach}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
           >
-            <BrainCircuit className="w-4 h-4" />
-            <span>GM Move-by-Move</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Play className="w-4 h-4 fill-current" />
+            <span>Start Review</span>
           </button>
 
           {blunders.length > 0 && (
@@ -205,22 +212,22 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
       {/* Accuracy Comparison Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* White Player */}
-        <div className="p-5 bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded-full bg-white border border-slate-400 shadow-xs" />
-              <span className="text-sm font-bold text-slate-900 dark:text-white">{whiteName}</span>
-              {whiteElo && <span className="text-xs text-slate-400">({whiteElo})</span>}
+        <div className="p-5 bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex items-center justify-between gap-3">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-3.5 h-3.5 rounded-full bg-white border border-slate-400 shadow-xs shrink-0" />
+              <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{whiteName}</span>
+              {whiteElo && <span className="text-xs font-semibold text-slate-400">({whiteElo})</span>}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Avg Centipawn Loss: <strong className="text-slate-700 dark:text-slate-300">{whiteAcpl} cp</strong>
+              Avg Centipawn Loss: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{whiteAcpl} cp</strong>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Est. Performance: <strong className="text-sky-600 dark:text-sky-400">{whiteRating}</strong>
+              Est. Performance: <strong className="text-sky-600 dark:text-sky-400 font-bold">{whiteRating}</strong>
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {whiteAccuracy}%
             </div>
@@ -229,22 +236,22 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         </div>
 
         {/* Black Player */}
-        <div className="p-5 bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded-full bg-slate-900 border border-slate-600 shadow-xs" />
-              <span className="text-sm font-bold text-slate-900 dark:text-white">{blackName}</span>
-              {blackElo && <span className="text-xs text-slate-400">({blackElo})</span>}
+        <div className="p-5 bg-white dark:bg-[#0d172a] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex items-center justify-between gap-3">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-3.5 h-3.5 rounded-full bg-slate-900 border border-slate-600 shadow-xs shrink-0" />
+              <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{blackName}</span>
+              {blackElo && <span className="text-xs font-semibold text-slate-400">({blackElo})</span>}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Avg Centipawn Loss: <strong className="text-slate-700 dark:text-slate-300">{blackAcpl} cp</strong>
+              Avg Centipawn Loss: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{blackAcpl} cp</strong>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Est. Performance: <strong className="text-sky-600 dark:text-sky-400">{blackRating}</strong>
+              Est. Performance: <strong className="text-sky-600 dark:text-sky-400 font-bold">{blackRating}</strong>
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {blackAccuracy}%
             </div>
@@ -398,10 +405,10 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
           <button
             onClick={onProceedToCoach}
-            className="flex-1 sm:flex-initial px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 sm:flex-initial px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/25 transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
-            <span>Proceed to GM Coach</span>
-            <ArrowRight className="w-4 h-4" />
+            <Play className="w-4 h-4 fill-current" />
+            <span>Start Review (Move 1)</span>
           </button>
         </div>
       </div>

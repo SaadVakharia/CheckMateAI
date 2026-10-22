@@ -87,4 +87,8 @@ export interface PlatformGameItem {
   };
   endTime: number;
   eco?: string;
+  platformAccuracies?: {
+    white?: number;
+    black?: number;
+  };
 }

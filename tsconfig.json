@@ -6,5 +6,7 @@
     "esModuleInterop": true,
     "strict": false,
     "skipLibCheck": true
-  }
+  },
+  "include": ["api/**/*"],
+  "exclude": ["client", "server", "node_modules", "dist"]
 }

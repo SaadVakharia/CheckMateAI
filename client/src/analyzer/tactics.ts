@@ -120,12 +120,41 @@ export function analyzeTactics(
     }
 
     if (!intentExplanation) {
-      if (lastMove.captured) {
-        intentExplanation = `Capturing the piece on ${lastMove.to} to win material.`;
+      if (lastMove.flags.includes('k') || lastMove.flags.includes('q')) {
+        intentExplanation = `Castles to tuck the King into safety and activate the rook toward central open files.`;
+      } else if (lastMove.captured) {
+        const capName = lastMove.captured === 'p' ? 'pawn' : lastMove.captured === 'n' ? 'knight' : lastMove.captured === 'b' ? 'bishop' : lastMove.captured === 'r' ? 'rook' : lastMove.captured === 'q' ? 'queen' : 'piece';
+        intentExplanation = `Captures the ${capName} on ${lastMove.to} to contest material and remove a key defender.`;
       } else if (movingPiece === 'p') {
-        intentExplanation = `Advancing pawn to gain space and challenge central squares.`;
+        if (['d4', 'd5', 'e4', 'e5'].includes(lastMove.to)) {
+          intentExplanation = `Claims vital central territory and opens crucial diagonal pathways for piece development.`;
+        } else if (['c4', 'c5', 'f4', 'f5'].includes(lastMove.to)) {
+          intentExplanation = `Challenges the opponent's pawn structure and fights for central flank control.`;
+        } else {
+          intentExplanation = `Solidifies the pawn structure and reinforces nearby outpost squares.`;
+        }
+      } else if (movingPiece === 'n') {
+        if (['f3', 'c3', 'f6', 'c6'].includes(lastMove.to)) {
+          intentExplanation = `Develops the knight toward the active center, supporting key central squares.`;
+        } else if (['d5', 'e5', 'd4', 'e4'].includes(lastMove.to)) {
+          intentExplanation = `Anchors the knight onto a commanding central outpost, radiating influence across both flanks.`;
+        } else {
+          intentExplanation = `Repositioning the Knight to ${lastMove.to} to improve piece activity and coordination.`;
+        }
+      } else if (movingPiece === 'b') {
+        if (['c4', 'c5', 'b5', 'b4', 'e7', 'e2', 'd3', 'd6', 'g4', 'g5', 'f4', 'f5'].includes(lastMove.to)) {
+          intentExplanation = `Develops the bishop along an active diagonal to pressure opponent targets and prepare castling.`;
+        } else {
+          intentExplanation = `Fianchettoes or repositions the bishop to seize long diagonal influence.`;
+        }
+      } else if (movingPiece === 'r') {
+        intentExplanation = `Slides the rook onto an active file to dominate file pressure and prepare battery infiltration.`;
+      } else if (movingPiece === 'q') {
+        intentExplanation = `Centralizes the Queen to coordinate attacks and exert multi-directional tactical pressure.`;
+      } else if (movingPiece === 'k') {
+        intentExplanation = `Steps the King to ${lastMove.to} to evade pins, improve endgame activity, or find safety.`;
       } else {
-        intentExplanation = `Repositioning ${lastMove.piece.toUpperCase()} to ${lastMove.to} to improve piece activity.`;
+        intentExplanation = `Plays ${lastMove.san} to optimize piece coordination.`;
       }
     }
   } catch (err) {

@@ -7,7 +7,11 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "cd client && npm install && npm run build"
+    "dev": "npm --prefix client run dev",
+    "server": "npm --prefix server run dev",
+    "build:client": "npm --prefix client run build",
+    "build:server": "npm --prefix server run build",
+    "build": "npm run build:client && npm run build:server"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

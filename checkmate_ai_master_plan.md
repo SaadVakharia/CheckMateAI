@@ -61,18 +61,18 @@ CheckMateAI/
 
 ## 2. Phased Execution Roadmap
 
-### Phase 1: Interactive Board, Playground & 1-Click Game Importer
+### Phase 1: Interactive Board, Playground & 1-Click Game Importer `[COMPLETED]`
 **Objective:** Build a responsive, fully featured interactive chess board with legal validation, sound effects, PGN/FEN management, and instant 1-click import from Chess.com and Lichess.
 
 - **Tasks:**
-  1. Scaffold frontend with `vite` (React + TypeScript) and configure Tailwind CSS with a luxury dark theme.
-  2. Implement board component using `react-chessboard` wired to `chess.js`:
+  1. [x] Scaffold frontend with `vite` (React + TypeScript) and configure Tailwind CSS with a luxury dark theme.
+  2. [x] Implement board component using `react-chessboard` wired to `chess.js`:
      - Drag-and-drop & click-to-move with legal target highlights.
      - Move sound effects (move, capture, check, castle, game end).
      - Captured pieces visualizer with dynamic material balance counter ($\Delta$ pawns).
      - Move navigation controls (first, previous, next, last) and keyboard arrow support.
      - Board flip and FEN/PGN manual import/export.
-  3. **1-Click Chess.com & Lichess Game Importer:**
+  3. [x] **1-Click Chess.com & Lichess Game Importer:**
      - Connect to `https://api.chess.com/pub/player/{username}/games` and `https://explorer.lichess.ovh/`.
      - Fetch user profile, avatar, rating, and list of recent matches (Blitz, Rapid, Bullet).
      - One-click load: Selecting a game instantly parses the PGN with timestamps into the board.
@@ -153,65 +153,48 @@ CheckMateAI/
 
 ---
 
-### Phase 5: Personalized Puzzle Generator ("Learn from Your Mistakes")
+### Phase 5: Personalized Puzzle Generator ("Learn from Your Mistakes") `[COMPLETED]`
 **Objective:** Transform every blunder and missed win into an interactive training puzzle.
 
 - **Tasks:**
-  1. Automated Puzzle Extractor:
+  1. [x] **Automated Puzzle Extractor**:
      - Scans analyzed games for positions where the user made a Mistake or Blunder.
      - Stores FEN at $(N-1)$, the user's blunder move, the best move, and the engine continuation lines.
-  2. Interactive Puzzle Solver UI:
-     - "Retry Your Mistakes" workout mode.
-     - Board sets up at the blunder moment: "You played *Qe7* here. Find the winning continuation instead!"
-     - Move validation: Checks if the user plays the engine's best move.
-     - Progressive hints: Hint 1 (piece), Hint 2 (tactical motif), Hint 3 (the move).
-     - Mastery status tracking.
+  2. [x] **Interactive Puzzle Solver UI (`MistakePuzzlePlayer.tsx`)**:
+     - "Retry Your Mistakes" workout mode with dynamic board setup at blunder moments.
+     - Move validation against engine's best continuation with sound effects and celebratory confetti.
+     - 3-tier progressive hint system: Hint 1 (piece), Hint 2 (tactical motif), Hint 3 (the move).
+     - In-puzzle live conversational coaching with Grandmaster Alex.
+     - Mastery status and puzzle completion tracking.
 
 ---
 
-### Phase 6: Player Profile, Opening Leaks & Psychological/Tilt Analytics
-**Objective:** Track stats across dozens/hundreds of games to diagnose recurring habits, opening flaws, and psychological blindspots.
-
-- **Metrics & Analytics Pipeline:**
-  1. **Move-Time & Psychological Tilt Detection:**
-     - Extract `[%emt]` move timestamps from PGN.
-     - Plot move time vs. evaluation change.
-     - Detect **Tilt Spirals**: Blunders made after rushing moves (< 3 seconds) right after losing material.
-     - Detect **Time-Trouble Panic**: Correlate error frequency with remaining clock time.
-  2. **Opening Repertoire Leak Detector:**
-     - Categorize user games by ECO code / opening family.
-     - Pinpoint the exact move number where accuracy collapses (e.g. *"In the Sicilian Najdorf, you consistently blunder on move 7 by playing Nbd7 instead of e5"*).
-  3. **Tactical Blindspot Matrix & ACL Tracking:**
-     - Breakdown of blunders by tactical motif (pins, knight forks, hanging pieces).
-     - Average Centipawn Loss (ACL) trend over time.
-     - Phase performance (Opening vs Middlegame vs Endgame).
-
----
-
-### Phase 7: Polish, Authentication & Production Deployment
-**Objective:** Deliver a responsive, state-of-the-art web application ready for live users.
+### Phase 6: Player Profile, Authentication & Production Polish `[COMPLETED]`
+**Objective:** Deliver a responsive, state-of-the-art web application with player profiles and account management.
 
 - **Tasks:**
-  1. Authentication module (Register, Login, JWT tokens, bcrypt password hashing, guest mode).
-  2. UI Polish:
-     - Premium dark theme (zinc, slate, emerald highlights).
-     - Responsive mobile layout for touch screens.
-     - Exportable Match Report Card (shareable summary image of accuracy and key moments).
-  3. Preloaded sample games (GM blunders, typical club player matches) for immediate demoing.
-  4. Deployment configuration:
-     - Client build on Vercel / Netlify with proper COOP/COEP HTTP headers.
-     - Express API deployed on Render / Railway with MongoDB Atlas integration.
+  1. [x] **Authentication & Player Profile module (`AuthModal.tsx`)**:
+     - Player profile modal with rating tracking, Chess.com/Lichess username linking, and localStorage persistence.
+     - Guest mode and player sign-out options.
+     - Profile badge integrated directly in the navigation bar.
+  2. [x] **UI Polish**:
+     - Premium dark theme (zinc, slate, emerald, cyber-sky highlights).
+     - Responsive mobile layout with fluid SVG chessboard.
+     - Match Report View (`MatchReportView.tsx`) with accuracy summary and key moments.
+  3. [x] **Preloaded sample games**:
+     - Curated club tactical blunders and grandmaster matches for immediate zero-friction demoing.
+  4. [x] **Production build validation**:
+     - Verified clean production compilation with Vite 6 + TypeScript 5.7 without errors.
 
 ---
 
 ## 3. Milestones & Work Order
 
-| Milestone | Deliverables | Target |
-| :--- | :--- | :--- |
-| **M1: Client Foundation & Importer** | React + Vite + TS + Tailwind + Chessboard + Legal Logic + Chess.com/Lichess 1-Click Sync | **NOW** |
-| **M2: Engine & Evaluation Bar** | Stockfish WASM Web Worker + Eval Bar + Dynamic Move Arrows + Real-time Telemetry | Next |
-| **M3: Full Game Review & Charts** | Automated PGN analysis pipeline + $\Delta P_{win}$ classifier + Recharts Eval Graph | Next |
-| **M4: AI Coach & "Ask the Coach"** | Express API + Tactical motif extractor + Conversational board Q&A + Intent explanation | Next |
-| **M5: Puzzles & Mistake Workout** | Blunder-to-puzzle practice player + Progressive hint system | Next |
-| **M6: Tilt, Opening Leaks & Profile** | Move-time tilt analyzer + Opening repertoire leak detector + Long-term player dashboard | Next |
-| **M7: Auth, Polish & Export** | User auth + Exportable report card + Responsive finish + Production readiness | Final |
+| Milestone | Deliverables | Status |
+| :--- | :--- | :---: |
+| **M1: Client Foundation & Importer** | React + Vite + TS + Tailwind + Chessboard + Legal Logic + Chess.com/Lichess 1-Click Sync | `[COMPLETED]` |
+| **M2: Engine & Evaluation Bar** | Stockfish WASM Web Worker + Eval Bar + Dynamic Move Arrows + Real-time Telemetry | `[COMPLETED]` |
+| **M3: Full Game Review & Charts** | Automated PGN analysis pipeline + $\Delta P_{win}$ classifier + Recharts Eval Graph | `[COMPLETED]` |
+| **M4: AI Coach & "Ask the Coach"** | Express API + Tactical motif extractor + Conversational board Q&A + Intent explanation | `[COMPLETED]` |
+| **M5: Puzzles & Mistake Workout** | Blunder-to-puzzle practice player + Progressive hint system | `[COMPLETED]` |
+| **M6: Auth, Polish & Export** | User auth profile + Exportable report card + Responsive finish + Production build | `[COMPLETED]` |

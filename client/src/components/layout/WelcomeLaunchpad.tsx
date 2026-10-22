@@ -23,7 +23,11 @@ import type { PlatformGameItem } from '../../types/chess';
 interface WelcomeLaunchpadProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectGame: (pgn: string, title?: string) => void;
+  onSelectGame: (
+    pgn: string,
+    title?: string,
+    platformAccuracies?: { white?: number; black?: number }
+  ) => void;
   hasActiveGame: boolean;
 }
 
@@ -92,7 +96,11 @@ export const WelcomeLaunchpad: React.FC<WelcomeLaunchpadProps> = ({
   };
 
   const handlePickOnlineGame = (game: PlatformGameItem) => {
-    onSelectGame(game.pgn, `${game.white.username} vs ${game.black.username}`);
+    onSelectGame(
+      game.pgn,
+      `${game.white.username} vs ${game.black.username}`,
+      game.platformAccuracies
+    );
     onClose();
   };
 

@@ -3,6 +3,7 @@ import { Eye, EyeOff, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import type { MoveAnalysis } from '../../types/chess';
 import { ClassificationBadge } from '../common/ClassificationBadge';
 import { CLASSIFICATION_CONFIG } from '../../analyzer/evaluator';
+import { speakCoachText, stopCoachSpeaking } from '../../utils/speech';
 
 interface CoachFeedbackBarProps {
   currentAnalysis?: MoveAnalysis;
@@ -75,12 +76,10 @@ export const CoachFeedbackBar: React.FC<CoachFeedbackBarProps> = ({
     verdictText = `${currentAnalysis.san} is a solid positional move that maintains the balance.`;
   }
 
-  // Handle Speech Synthesis
+  // Handle Speech Synthesis using natural GM Alex engine
   const handleSpeakVerdict = () => {
-    if (!('speechSynthesis' in window)) return;
-
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      stopCoachSpeaking();
       setIsSpeaking(false);
       return;
     }
@@ -89,17 +88,11 @@ export const CoachFeedbackBar: React.FC<CoachFeedbackBarProps> = ({
       isMistakeOrBlunder && currentAnalysis.bestMove ? `Best move was ${currentAnalysis.bestMove}.` : ''
     }`;
 
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
+    speakCoachText(textToSpeak, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
   };
 
   return (

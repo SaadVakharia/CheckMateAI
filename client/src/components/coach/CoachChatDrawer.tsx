@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  Bot,
   Send,
   Sparkles,
   Lightbulb,
@@ -13,6 +12,7 @@ import type { MoveAnalysis } from '../../types/chess';
 import { CLASSIFICATION_CONFIG } from '../../analyzer/evaluator';
 import { askCoachChat, explainMoveWithCoach, fetchCoachStatus, type CoachExplanation } from '../../services/coachApi';
 import { FormattedMessage } from '../common/FormattedMessage';
+import { speakCoachText, stopCoachSpeaking } from '../../utils/speech';
 
 interface CoachChatDrawerProps {
   currentAnalysis?: MoveAnalysis;
@@ -39,7 +39,11 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
   ]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('checkmate_coach_voice') === 'true';
+  });
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [coachStatus, setCoachStatus] = useState<{ status: string; hasApiKey: boolean; coachPersona: string }>({
     status: 'online',
     hasApiKey: false,
@@ -50,6 +54,17 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevPlyRef = useRef<number | null>(null);
+
+  // Sync voice preference across tabs in real-time
+  useEffect(() => {
+    const handleVoiceChange = () => {
+      setVoiceEnabled(localStorage.getItem('checkmate_coach_voice') === 'true');
+    };
+    window.addEventListener('coach_voice_changed', handleVoiceChange);
+    return () => {
+      window.removeEventListener('coach_voice_changed', handleVoiceChange);
+    };
+  }, []);
 
   // Check coach backend status on mount
   useEffect(() => {
@@ -101,18 +116,14 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
     }
   }, [currentAnalysis?.ply, currentAnalysis?.san, currentAnalysis?.classification]);
 
-  // Voice speech helper
+  // Natural voice speech helper using GM Alex voice engine
   const speakText = (text: string) => {
-    if (!voiceEnabled || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
-      utterance.volume = 0.8;
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      // ignore
-    }
+    if (!voiceEnabled) return;
+    speakCoachText(text, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
   };
 
   // Fetch coach explanation when user steps into a new move
@@ -240,17 +251,36 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
     <div className="flex flex-col h-full w-full bg-transparent overflow-hidden select-none">
       {/* Header Bar */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-50/70 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500 font-bold text-xs">
-            <Bot className="w-3.5 h-3.5" />
+        <div className="flex items-center space-x-2.5">
+          {/* GM Alex Avatar Portrait with online dot & active voice pulse */}
+          <div
+            className={`relative w-8 h-8 rounded-full overflow-hidden border shadow-xs bg-[#162032] shrink-0 transition-all duration-300 ${
+              isSpeaking
+                ? 'border-emerald-400 ring-2 ring-emerald-400/50 shadow-[0_0_10px_rgba(52,211,153,0.5)]'
+                : 'border-slate-300 dark:border-slate-700'
+            }`}
+          >
+            <img
+              src="/coach_alex.jpg"
+              alt="Grandmaster Alex"
+              className="w-full h-full object-cover object-top scale-110"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+            <span
+              className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white dark:border-slate-900 shadow-2xs transition-colors ${
+                isSpeaking ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-500'
+              }`}
+            />
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
-              <span>{coachStatus.coachPersona}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+              <span>Grandmaster Alex</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             </h3>
             <p className="text-[9.5px] text-slate-500 dark:text-slate-400">
-              {coachStatus.hasApiKey ? 'Powered by Gemini AI' : 'Live Pedagogy'}
+              {coachStatus.hasApiKey ? 'Powered by Gemini AI' : 'Live GM Pedagogy'}
             </p>
           </div>
         </div>
@@ -263,17 +293,26 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
               onClick={() => {
                 const next = !voiceEnabled;
                 setVoiceEnabled(next);
-                if (!next) window.speechSynthesis.cancel();
+                localStorage.setItem('checkmate_coach_voice', String(next));
+                window.dispatchEvent(new Event('coach_voice_changed'));
+                if (!next) {
+                  stopCoachSpeaking();
+                  setIsSpeaking(false);
+                }
               }}
               title={voiceEnabled ? 'Mute Live Voice Coach' : 'Enable Live Voice Coach'}
-              className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer flex items-center gap-1 font-semibold ${
+              className={`px-2.5 py-1 rounded-xl text-[10.5px] border transition cursor-pointer flex items-center gap-1.5 font-bold ${
                 voiceEnabled
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              {voiceEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-              <span>{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
+              {voiceEnabled ? (
+                <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-emerald-300 animate-pulse' : ''}`} />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5" />
+              )}
+              <span>{voiceEnabled ? (isSpeaking ? 'Speaking...' : 'Voice On') : 'Voice Off'}</span>
             </button>
           )}
 
@@ -353,31 +392,47 @@ export const CoachChatDrawer: React.FC<CoachChatDrawerProps> = ({ currentAnalysi
       )}
 
       {/* Chat Messages Log (fills available height cleanly) */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 select-text">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 select-text">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+            className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start items-start gap-2'}`}
           >
-            <div
-              className={`max-w-[88%] rounded-2xl px-3 py-1.5 text-xs leading-relaxed ${
-                msg.sender === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-none shadow-2xs shadow-blue-500/20'
-                  : msg.isAlert
-                  ? 'bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-bl-none shadow-2xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-bl-none shadow-2xs'
-              }`}
-            >
-              <FormattedMessage
-                text={msg.text}
-                strongClassName={
+            {msg.sender === 'coach' && (
+              <div className="relative w-7 h-7 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-2xs bg-[#162032] shrink-0 mt-0.5">
+                <img
+                  src="/coach_alex.jpg"
+                  alt="GM Alex"
+                  className="w-full h-full object-cover object-top scale-110"
+                />
+                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-slate-900 shadow-2xs" />
+              </div>
+            )}
+            <div className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start min-w-0 max-w-[86%]'}`}>
+              <div
+                className={`relative rounded-2xl px-3 py-2 text-xs leading-relaxed ${
                   msg.sender === 'user'
-                    ? 'font-bold text-white underline decoration-sky-300'
-                    : 'font-bold text-sky-600 dark:text-sky-400 font-mono'
-                }
-              />
+                    ? 'bg-blue-600 text-white rounded-br-none shadow-2xs shadow-blue-500/20'
+                    : msg.isAlert
+                    ? 'bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-tl-xs shadow-2xs'
+                    : 'bg-white dark:bg-slate-800/95 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-tl-xs shadow-2xs'
+                }`}
+              >
+                {/* Pointer triangle matching Review tab */}
+                {msg.sender === 'coach' && (
+                  <div className="absolute top-2.5 -left-1 w-2.5 h-2.5 bg-white dark:bg-slate-800/95 border-l border-b border-slate-200 dark:border-slate-700/80 transform rotate-45" />
+                )}
+                <FormattedMessage
+                  text={msg.text}
+                  strongClassName={
+                    msg.sender === 'user'
+                      ? 'font-bold text-white underline decoration-sky-300'
+                      : 'font-bold text-sky-600 dark:text-sky-400 font-mono'
+                  }
+                />
+              </div>
+              <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 px-1 font-medium">{msg.time}</span>
             </div>
-            <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 px-1 font-medium">{msg.time}</span>
           </div>
         ))}
 

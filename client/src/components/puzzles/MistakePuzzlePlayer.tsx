@@ -28,6 +28,7 @@ import {
   type PuzzleHintsData,
   type PuzzleContextParam,
 } from '../../services/coachApi';
+import { speakCoachText, stopCoachSpeaking } from '../../utils/speech';
 
 interface MistakePuzzlePlayerProps {
   blunders: MoveAnalysis[];
@@ -127,7 +128,20 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
   const [chatMessages, setChatMessages] = useState<PuzzleChatMessage[]>([]);
   const [inputQuestion, setInputQuestion] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('checkmate_coach_voice') === 'true';
+  });
+
+  useEffect(() => {
+    const handleVoiceChange = () => {
+      setVoiceEnabled(localStorage.getItem('checkmate_coach_voice') === 'true');
+    };
+    window.addEventListener('coach_voice_changed', handleVoiceChange);
+    return () => {
+      window.removeEventListener('coach_voice_changed', handleVoiceChange);
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -361,12 +375,9 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
 
       setChatMessages((prev) => [...prev, coachMsg]);
 
-      // Voice TTS if enabled
-      if (voiceEnabled && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(res.answer);
-        utterance.rate = 1.05;
-        window.speechSynthesis.speak(utterance);
+      // Natural Voice TTS if enabled
+      if (voiceEnabled) {
+        speakCoachText(res.answer);
       }
     } catch {
       setChatMessages((prev) => [
@@ -747,7 +758,13 @@ export const MistakePuzzlePlayer: React.FC<MistakePuzzlePlayerProps> = ({ blunde
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    onClick={() => {
+                      const next = !voiceEnabled;
+                      setVoiceEnabled(next);
+                      localStorage.setItem('checkmate_coach_voice', String(next));
+                      window.dispatchEvent(new Event('coach_voice_changed'));
+                      if (!next) stopCoachSpeaking();
+                    }}
                     title={voiceEnabled ? 'Mute Coach Voice' : 'Enable Coach Voice'}
                     className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer flex items-center gap-1 font-semibold ${
                       voiceEnabled

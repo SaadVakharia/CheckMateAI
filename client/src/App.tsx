@@ -9,16 +9,16 @@ import { MistakePuzzlePlayer } from './components/puzzles/MistakePuzzlePlayer';
 import { PlatformSyncModal } from './components/importer/PlatformSyncModal';
 import { PGNModal } from './components/importer/PGNModal';
 import { PRELOADED_GAMES } from './services/chessPlatforms';
-import { ClassificationBadge } from './components/common/ClassificationBadge';
 import { Activity, ListOrdered, Bot, Cpu, ArrowRight, Zap, StopCircle } from 'lucide-react';
 import type { MoveAnalysis, MoveClassification } from './types/chess';
 import { centipawnsToWinPercent, classifyMove } from './analyzer/evaluator';
 import { isTheoryMove } from './analyzer/ecoBook';
 import { analyzeTactics } from './analyzer/tactics';
 import { sounds } from './utils/sound';
-import { WorkflowStepper, type WorkflowStep } from './components/layout/WorkflowStepper';
+import type { WorkflowStep } from './components/layout/WorkflowStepper';
 import { WelcomeLaunchpad } from './components/layout/WelcomeLaunchpad';
 import { MatchReportView } from './components/analysis/MatchReportView';
+import { CoachReviewBanner } from './components/analysis/CoachReviewBanner';
 import { ThemeProvider } from './context/ThemeContext';
 import { stockfishEngine } from './engine/stockfishWorker';
 import type { EngineEvaluation } from './engine/stockfishWorker';
@@ -29,7 +29,7 @@ export function ChessApp() {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPgnModalOpen, setIsPgnModalOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'moves' | 'coach' | 'engine'>('moves');
-  const [showFlowGraph, setShowFlowGraph] = useState<boolean>(true);
+  const [showFlowGraph, setShowFlowGraph] = useState<boolean>(false);
 
   // Chess Game State
   const [chessInstance, setChessInstance] = useState<Chess>(() => new Chess());
@@ -37,6 +37,7 @@ export function ChessApp() {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [boardHoveredMove, setBoardHoveredMove] = useState<{ from?: string; to?: string; color?: 'emerald' | 'red' } | null>(null);
 
   // Keep stable refs to prevent re-render loops in callbacks
   const chessInstanceRef = useRef(chessInstance);
@@ -49,6 +50,10 @@ export function ChessApp() {
     black: string;
     whiteElo?: string;
     blackElo?: string;
+    platformAccuracies?: {
+      white?: number;
+      black?: number;
+    };
   }>({
     white: 'Alex_Tactics',
     black: 'KnightRider99',
@@ -139,12 +144,18 @@ export function ChessApp() {
   }, []);
 
   // Parse a PGN and build the MoveAnalysis timeline
-  const loadPgnIntoState = useCallback((pgnString: string, title?: string, triggerAutoReview: boolean = autoReviewEnabled) => {
-    try {
-      // Abort any ongoing review scan
-      stockfishEngine.abortScan();
-      setIsScanning(false);
-      setCurrentScanSan('');
+  const loadPgnIntoState = useCallback(
+    (
+      pgnString: string,
+      title?: string,
+      triggerAutoReview: boolean = autoReviewEnabled,
+      platformAccuracies?: { white?: number; black?: number }
+    ) => {
+      try {
+        // Abort any ongoing review scan
+        stockfishEngine.abortScan();
+        setIsScanning(false);
+        setCurrentScanSan('');
 
       const tempGame = new Chess();
       tempGame.loadPgn(pgnString);
@@ -241,6 +252,7 @@ export function ChessApp() {
         black: blackPlayer || 'Black',
         whiteElo: headers['WhiteElo'] || undefined,
         blackElo: headers['BlackElo'] || undefined,
+        platformAccuracies,
       });
 
       // Auto Deep Review: seamlessly trigger background deep engine scan
@@ -453,14 +465,9 @@ export function ChessApp() {
 
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
-      {/* Navigation (fixed top) */}
+      {/* Navigation (Consolidated single sleek top header) */}
       <div className="shrink-0">
         <Navbar
-          onOpenSync={() => setIsSyncModalOpen(true)}
-          onOpenPgn={() => setIsPgnModalOpen(true)}
-          onResetGame={handleResetGame}
-        />
-        <WorkflowStepper
           currentStep={workflowStep}
           onSelectStep={setWorkflowStep}
           gameTitle={gameTitle}
@@ -469,11 +476,12 @@ export function ChessApp() {
           isScanning={isScanning}
           scanProgress={scanProgress}
           onOpenLaunchpad={() => setIsLaunchpadOpen(true)}
+          onResetGame={handleResetGame}
         />
       </div>
 
-      {/* Main Viewport Content Area (locked height, zero outer scroll) */}
-      <main className="flex-1 min-h-0 max-w-[1450px] w-full mx-auto p-2 sm:p-3 flex flex-col overflow-hidden">
+      {/* Main Viewport Content Area (locked height, zero outer scroll, maximized vertical space!) */}
+      <main className="flex-1 min-h-0 max-w-[1550px] w-full mx-auto p-2 sm:p-2.5 flex flex-col overflow-hidden">
         {/* Match Report */}
         {workflowStep === 'report' && (
           <MatchReportView
@@ -482,14 +490,22 @@ export function ChessApp() {
             blackName={players.black}
             whiteElo={players.whiteElo}
             blackElo={players.blackElo}
+            platformAccuracies={players.platformAccuracies}
             gameTitle={gameTitle}
             isScanning={isScanning}
             scanProgress={scanProgress}
             onSelectPly={(ply) => {
               goToPly(ply);
+              setSidebarTab('moves');
               setWorkflowStep('board');
             }}
-            onProceedToCoach={() => setWorkflowStep('board')}
+            onProceedToCoach={() => {
+              if (analyses.length > 0) {
+                goToPly(1);
+              }
+              setSidebarTab('moves');
+              setWorkflowStep('board');
+            }}
             onGoToPuzzles={() => setWorkflowStep('puzzles')}
           />
         )}
@@ -497,18 +513,8 @@ export function ChessApp() {
         {/* Analysis Board & GM Coach */}
         {workflowStep === 'board' && (
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch overflow-hidden">
-            {/* Left: Match Info + Interactive Board & Controls (6 Cols) */}
-            <div className="lg:col-span-6 h-full flex flex-col min-h-0 gap-1.5">
-              {/* Game Title Bar (Confined to Left Side Width) */}
-              <div className="flex items-center justify-between px-3 py-1 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xs transition-colors shrink-0">
-                <div className="flex items-center space-x-2 text-xs min-w-0">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Match:</span>
-                  <span className="font-bold text-slate-900 dark:text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">{gameTitle}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
-                  {analyses.length} moves • {blunderList.length} blunders
-                </div>
-              </div>
+            {/* Left: Interactive Board & Controls (6 Cols, begins right at the top!) */}
+            <div className="lg:col-span-6 h-full flex flex-col min-h-0">
 
               {/* Interactive Board */}
               <div className="flex-1 min-h-0">
@@ -524,6 +530,7 @@ export function ChessApp() {
                   bestMove={currentPositionBestMove}
                   secondaryMoves={liveEvaluation.lines.slice(1).map((l) => l.bestMove || l.bestMoveSan || '')}
                   currentAnalysis={currentAnalysis}
+                  hoveredMove={boardHoveredMove}
                   players={players}
                   showCoachFeedbackBar={false}
                   onRetryMove={() => {
@@ -549,64 +556,66 @@ export function ChessApp() {
 
             {/* Right: Master Unified Analysis Panel (6 Cols, extends to the very top!) */}
             <div className="lg:col-span-6 h-full flex flex-col min-h-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden select-none">
-              {/* Integrated Panel Header: Telemetry + Action + Tabs */}
+              {/* Integrated Panel Header: Clean Single Row or Expanded on Engine */}
               <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 shrink-0">
-                {/* Row 1: Stockfish 19 Engine Strip */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200/60 dark:border-slate-800/60 text-xs">
-                  <div className="flex items-center space-x-2 min-w-0">
-                    <div className="w-5 h-5 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500 shrink-0">
-                      <Cpu className="w-3 h-3" />
+                {/* Stockfish 19 Engine Strip (Shown ONLY in Engine tab or during active scan) */}
+                {(sidebarTab === 'engine' || isScanning) && (
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-200/60 dark:border-slate-800/60 text-xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <div className="w-5 h-5 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-500 shrink-0">
+                        <Cpu className="w-3 h-3" />
+                      </div>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">Stockfish 19</span>
+                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                          {isScanning ? `Scan: ${currentScanPly}/${totalScanPlies}` : `D:${liveEvaluation.depth}/${liveEvaluation.maxDepth}`}
+                        </span>
+                        <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                          activeScoreCp > 30
+                            ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                            : activeScoreCp < -30
+                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          {liveEvaluation.mate !== undefined ? `M${Math.abs(liveEvaluation.mate)}` : activeScoreCp > 0 ? `+${(activeScoreCp / 100).toFixed(1)}` : `${(activeScoreCp / 100).toFixed(1)}`}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">Stockfish 19</span>
-                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        {isScanning ? `Scan: ${currentScanPly}/${totalScanPlies}` : `D:${liveEvaluation.depth}/${liveEvaluation.maxDepth}`}
-                      </span>
-                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
-                        activeScoreCp > 30
-                          ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
-                          : activeScoreCp < -30
-                          ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                          : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}>
-                        {liveEvaluation.mate !== undefined ? `M${Math.abs(liveEvaluation.mate)}` : activeScoreCp > 0 ? `+${(activeScoreCp / 100).toFixed(1)}` : `${(activeScoreCp / 100).toFixed(1)}`}
-                      </span>
+
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <button
+                        onClick={toggleAutoReview}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                          autoReviewEnabled
+                            ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'
+                        }`}
+                        title={autoReviewEnabled ? "Auto Deep Review is ON" : "Auto Deep Review is OFF"}
+                      >
+                        <Zap className="w-2.5 h-2.5" />
+                        <span>Auto {autoReviewEnabled ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      {isScanning ? (
+                        <button
+                          onClick={handleCancelScan}
+                          className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/60 dark:hover:bg-red-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <StopCircle className="w-3 h-3 text-red-500" />
+                          <span>Cancel ({scanProgress}%)</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleStartDeepScan(10)}
+                          className="px-2.5 py-1 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                        >
+                          <Zap className="w-3 h-3 fill-current text-cyan-200" />
+                          <span>Deep Review</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-1.5 shrink-0">
-                    <button
-                      onClick={toggleAutoReview}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
-                        autoReviewEnabled
-                          ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'
-                      }`}
-                      title={autoReviewEnabled ? "Auto Deep Review is ON" : "Auto Deep Review is OFF"}
-                    >
-                      <Zap className="w-2.5 h-2.5" />
-                      <span>Auto {autoReviewEnabled ? 'ON' : 'OFF'}</span>
-                    </button>
-
-                    {isScanning ? (
-                      <button
-                        onClick={handleCancelScan}
-                        className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/60 dark:hover:bg-red-900 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
-                      >
-                        <StopCircle className="w-3 h-3 text-red-500" />
-                        <span>Cancel ({scanProgress}%)</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleStartDeepScan(10)}
-                        className="px-2.5 py-1 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
-                      >
-                        <Zap className="w-3 h-3 fill-current text-cyan-200" />
-                        <span>Deep Review</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+                )}
 
                 {/* Progress bar if scanning */}
                 {isScanning && (
@@ -621,7 +630,7 @@ export function ChessApp() {
                   </div>
                 )}
 
-                {/* Row 2: Segmented Tabs */}
+                {/* Primary Segmented Tabs Row */}
                 <div className="flex items-center justify-between px-2.5 py-1.5">
                   <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800/80 p-0.5 rounded-lg text-xs">
                     <button
@@ -633,7 +642,7 @@ export function ChessApp() {
                       }`}
                     >
                       <ListOrdered className="w-3.5 h-3.5" />
-                      <span>Moves</span>
+                      <span>Review</span>
                       {blunderList.length > 0 && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-600 dark:text-red-400 font-bold">
                           {blunderList.length}
@@ -667,38 +676,56 @@ export function ChessApp() {
                     </button>
                   </div>
 
-                  {sidebarTab === 'moves' && (
-                    <button
-                      onClick={() => setShowFlowGraph(!showFlowGraph)}
-                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
-                        showFlowGraph
-                          ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
-                          : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'
-                      }`}
-                      title="Toggle Advantage Flow graph"
-                    >
-                      <Activity className="w-3 h-3" />
-                      <span>{showFlowGraph ? 'Hide Flow' : 'Show Flow'}</span>
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {/* Live Evaluation Pill */}
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                      activeScoreCp > 30
+                        ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                        : activeScoreCp < -30
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      {liveEvaluation.mate !== undefined ? `M${Math.abs(liveEvaluation.mate)}` : activeScoreCp > 0 ? `+${(activeScoreCp / 100).toFixed(1)}` : `${(activeScoreCp / 100).toFixed(1)}`}
+                    </span>
+
+                    {/* Collapsible Flow toggle (only in Review tab) */}
+                    {sidebarTab === 'moves' && (
+                      <button
+                        onClick={() => setShowFlowGraph(!showFlowGraph)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                          showFlowGraph
+                            ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
+                            : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        }`}
+                        title="Toggle Advantage Flow graph"
+                      >
+                        <Activity className="w-3 h-3" />
+                        <span>Flow</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Tab Body Content (Takes 100% of remaining height, cleanly scrollable) */}
               <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                {/* 1. Moves Tab */}
+                {/* 1. Review & Moves Tab */}
                 {sidebarTab === 'moves' && (
                   <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                    {/* Collapsible Advantage Flow Chart inside Moves tab */}
-                    {showFlowGraph && (
-                      <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
-                        <EvalGraph
-                          analyses={analyses}
-                          currentPly={currentPly}
-                          onSelectPly={goToPly}
-                        />
-                      </div>
-                    )}
+                    {/* Chess.com-Style Coach Review Banner & Next Move Walkthrough */}
+                    <CoachReviewBanner
+                      currentAnalysis={currentAnalysis}
+                      currentPly={currentPly}
+                      totalPlies={analyses.length}
+                      onSelectPly={goToPly}
+                      onHoverMove={setBoardHoveredMove}
+                      onAskCoach={() => setSidebarTab('coach')}
+                      onRetryMove={() => {
+                        if (currentPly > 0) {
+                          goToPly(currentPly - 1);
+                        }
+                      }}
+                    />
 
                     {/* Move Table */}
                     <div className="flex-1 min-h-0">
@@ -709,35 +736,14 @@ export function ChessApp() {
                       />
                     </div>
 
-                    {/* Active Move Tactical Card */}
-                    {currentAnalysis && (
-                      <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 select-none">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <ClassificationBadge classification={currentAnalysis.classification} size="sm" />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
-                              <span>Move {Math.floor((currentAnalysis.ply - 1) / 2) + 1}{currentAnalysis.ply % 2 === 1 ? '.' : '...'} {currentAnalysis.san}</span>
-                              {currentAnalysis.deltaWinPercent !== undefined && (
-                                <span className={`text-[10px] font-mono ${currentAnalysis.deltaWinPercent >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                  {currentAnalysis.deltaWinPercent >= 0
-                                    ? `+${currentAnalysis.deltaWinPercent.toFixed(1)}%`
-                                    : `${currentAnalysis.deltaWinPercent.toFixed(1)}%`}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-[280px]">
-                              {currentAnalysis.coachCommentary || (currentAnalysis.bestMove ? `Best: ${currentAnalysis.bestMove}` : 'Normal book or quiet move')}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setSidebarTab('coach')}
-                          className="px-2.5 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-xs font-bold flex items-center gap-1 shrink-0 transition cursor-pointer shadow-xs active:scale-95"
-                          title="Open Grandmaster Alex coach discussion"
-                        >
-                          <span>Ask Coach</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
+                    {/* Collapsible Advantage Flow Chart inside Review tab */}
+                    {showFlowGraph && (
+                      <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 shrink-0">
+                        <EvalGraph
+                          analyses={analyses}
+                          currentPly={currentPly}
+                          onSelectPly={goToPly}
+                        />
                       </div>
                     )}
                   </div>
@@ -836,8 +842,8 @@ export function ChessApp() {
                   </div>
                 )}
 
-                {/* Progression Footer to Retrain Blunders */}
-                {blunderList.length > 0 && (
+                {/* Progression Footer to Retrain Blunders (Hidden in Review tab for maximum move list height) */}
+                {blunderList.length > 0 && sidebarTab !== 'moves' && (
                   <div className="p-2.5 bg-slate-50 dark:bg-[#070c18] border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs shrink-0 rounded-b-2xl">
                     <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
                       {blunderList.length} tactical mistakes detected
@@ -868,8 +874,8 @@ export function ChessApp() {
       <WelcomeLaunchpad
         isOpen={isLaunchpadOpen}
         onClose={() => setIsLaunchpadOpen(false)}
-        onSelectGame={(pgn, title) => {
-          loadPgnIntoState(pgn, title);
+        onSelectGame={(pgn, title, platformAccuracies) => {
+          loadPgnIntoState(pgn, title, undefined, platformAccuracies);
           setWorkflowStep('report');
         }}
         hasActiveGame={analyses.length > 0}
@@ -879,11 +885,12 @@ export function ChessApp() {
       <PlatformSyncModal
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
-        onSelectGame={(pgn, title) => {
-          loadPgnIntoState(pgn, title);
+        onSelectGame={(pgn, title, platformAccuracies) => {
+          loadPgnIntoState(pgn, title, undefined, platformAccuracies);
           setWorkflowStep('report');
         }}
       />
+
 
       {/* PGN / FEN Modal */}
       <PGNModal

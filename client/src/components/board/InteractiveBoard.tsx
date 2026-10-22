@@ -29,6 +29,7 @@ interface InteractiveBoardProps {
     blackElo?: string;
   };
   showCoachFeedbackBar?: boolean;
+  hoveredMove?: { from?: string; to?: string; color?: 'emerald' | 'red' } | null;
   onMakeMove: (sourceSquare: string, targetSquare: string) => boolean;
   onFirst: () => void;
   onPrev: () => void;
@@ -88,6 +89,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
   currentAnalysis,
   players,
   showCoachFeedbackBar = false,
+  hoveredMove,
   onMakeMove,
   onFirst,
   onPrev,
@@ -184,6 +186,16 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
     }
   }
 
+  // Dynamic arrow when a move is hovered in Coach Review or Mistake workouts
+  if (hoveredMove?.from && hoveredMove?.to) {
+    const isRed = hoveredMove.color === 'red';
+    arrows.push({
+      startSquare: hoveredMove.from,
+      endSquare: hoveredMove.to,
+      color: isRed ? (isDark ? '#f87171' : '#dc2626') : (isDark ? '#34d399' : '#059669'),
+    });
+  }
+
   // Handle click to move
   const handleSquareClick = (square: Square) => {
     if (!selectedSquare) {
@@ -202,7 +214,7 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
     }
   };
 
-  // Custom square styles for legal targets and selected piece
+  // Custom square styles for legal targets, selected piece, and hovered moves
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
@@ -221,6 +233,32 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
       cursor: 'pointer',
     };
   });
+
+  // Apply square glow on hover
+  if (hoveredMove?.from && hoveredMove?.to) {
+    const isRed = hoveredMove.color === 'red';
+    customSquareStyles[hoveredMove.from] = {
+      backgroundColor: isRed ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.35)',
+      boxShadow: isRed ? 'inset 0 0 0 2px #ef4444' : 'inset 0 0 0 2px #10b981',
+      borderRadius: '4px',
+    };
+    customSquareStyles[hoveredMove.to] = {
+      backgroundColor: isRed ? 'rgba(239, 68, 68, 0.55)' : 'rgba(16, 185, 129, 0.55)',
+      boxShadow: isRed
+        ? 'inset 0 0 0 3px #ef4444, 0 0 16px rgba(239, 68, 68, 0.9)'
+        : 'inset 0 0 0 3px #10b981, 0 0 16px rgba(16, 185, 129, 0.9)',
+      borderRadius: '4px',
+    };
+  } else if (hoveredMove?.to) {
+    const isRed = hoveredMove.color === 'red';
+    customSquareStyles[hoveredMove.to] = {
+      backgroundColor: isRed ? 'rgba(239, 68, 68, 0.55)' : 'rgba(16, 185, 129, 0.55)',
+      boxShadow: isRed
+        ? 'inset 0 0 0 3px #ef4444, 0 0 16px rgba(239, 68, 68, 0.9)'
+        : 'inset 0 0 0 3px #10b981, 0 0 16px rgba(16, 185, 129, 0.9)',
+      borderRadius: '4px',
+    };
+  }
 
   return (
     <div className="flex flex-col h-full justify-between select-none min-h-0 gap-1.5">
@@ -263,8 +301,8 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
         {/* Real-time Eval Bar */}
         <div className={`h-full flex items-center justify-center ${
           showCoachFeedbackBar
-            ? 'max-h-[min(480px,calc(100vh-270px))]'
-            : 'max-h-[min(560px,calc(100vh-210px))]'
+            ? 'max-h-[min(600px,calc(100vh-190px))]'
+            : 'max-h-[min(720px,calc(100vh-140px))]'
         }`}>
           <EvalBar scoreCp={scoreCp} mate={mate} isFlipped={isFlipped} />
         </div>
@@ -272,8 +310,8 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
         {/* The Chessboard with Chess.com Badge Overlay */}
         <div className={`relative aspect-square h-full rounded-xl overflow-hidden shadow-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 transition-colors ${
           showCoachFeedbackBar
-            ? 'max-h-[min(480px,calc(100vh-270px))]'
-            : 'max-h-[min(560px,calc(100vh-210px))]'
+            ? 'max-h-[min(600px,calc(100vh-190px))]'
+            : 'max-h-[min(720px,calc(100vh-140px))]'
         }`}>
           <Chessboard
             options={{
@@ -289,6 +327,9 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
                 const isTarget = currentAnalysis && currentAnalysis.to === square;
                 const isSource = currentAnalysis && currentAnalysis.from === square;
                 const isKingDanger = kingInCheckSquare === square;
+                const isHoverTarget = hoveredMove && hoveredMove.to === square;
+                const isHoverSource = hoveredMove && hoveredMove.from === square;
+                const isHoverRed = hoveredMove?.color === 'red';
 
                 return (
                   <div className="relative w-full h-full flex items-center justify-center">
@@ -297,9 +338,20 @@ export const InteractiveBoard: React.FC<InteractiveBoardProps> = ({
                       <div className="absolute inset-0 bg-red-600/35 dark:bg-red-600/45 animate-pulse rounded-sm pointer-events-none" />
                     )}
 
-                    {/* Last Move Soft Highlight */}
-                    {(isTarget || isSource) && (
+                    {/* Last Move Soft Highlight (subdued when square is hovered) */}
+                    {(isTarget || isSource) && !isHoverTarget && !isHoverSource && (
                       <div className="absolute inset-0 bg-yellow-400/25 dark:bg-yellow-400/20 pointer-events-none" />
+                    )}
+
+                    {/* Hover Move Dynamic Pulsing Glow Overlay */}
+                    {(isHoverTarget || isHoverSource) && (
+                      <div
+                        className={`absolute inset-0 pointer-events-none rounded-sm transition-all duration-150 animate-pulse z-10 ${
+                          isHoverRed
+                            ? 'bg-red-500/35 ring-4 ring-inset ring-red-500 shadow-[0_0_18px_rgba(239,68,68,0.95)]'
+                            : 'bg-emerald-500/35 ring-4 ring-inset ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.95)]'
+                        }`}
+                      />
                     )}
 
                     {/* Piece element */}

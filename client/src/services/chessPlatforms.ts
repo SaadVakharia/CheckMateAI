@@ -149,6 +149,12 @@ function formatChessComGames(games: any[], _user?: string): PlatformGameItem[] {
       },
       endTime: g.end_time ? g.end_time * 1000 : Date.now(),
       eco: g.eco,
+      platformAccuracies: g.accuracies
+        ? {
+            white: typeof g.accuracies.white === 'number' ? Math.round(g.accuracies.white * 10) / 10 : undefined,
+            black: typeof g.accuracies.black === 'number' ? Math.round(g.accuracies.black * 10) / 10 : undefined,
+          }
+        : undefined,
     }));
 }
 

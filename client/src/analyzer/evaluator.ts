@@ -218,16 +218,41 @@ export function calculateACPL(moves: MoveAnalysis[]): number {
 }
 
 /**
- * Estimates rating performance based on Accuracy % and ACPL
+ * Estimates rating performance based on Accuracy %, ACPL, and optional base player Elo.
+ * Calibrated against realistic Chess.com game review performance ratings.
  */
-export function estimatePerformanceRating(accuracy: number, acpl: number): number {
-  if (accuracy >= 95 || acpl <= 15) return 2650;
-  if (accuracy >= 90 || acpl <= 25) return 2350;
-  if (accuracy >= 85 || acpl <= 35) return 2100;
-  if (accuracy >= 80 || acpl <= 50) return 1850;
-  if (accuracy >= 75 || acpl <= 65) return 1600;
-  if (accuracy >= 65 || acpl <= 85) return 1350;
-  if (accuracy >= 55 || acpl <= 110) return 1100;
-  return 900;
+export function estimatePerformanceRating(
+  accuracy: number,
+  acpl: number,
+  baseElo?: number
+): number {
+  if (baseElo && !isNaN(baseElo) && baseElo > 100) {
+    // Expected accuracy at player's baseline rating:
+    // ~500 Elo -> 58%, ~1000 Elo -> 68%, ~1500 Elo -> 78%, ~2000 Elo -> 86%, ~2500 Elo -> 93%
+    const expectedAccuracy = Math.min(94, Math.max(50, 50 + (baseElo / 2500) * 44));
+    const accuracyDelta = accuracy - expectedAccuracy;
+
+    // Expected ACPL for this rating:
+    const expectedAcpl = Math.max(20, Math.min(180, 200 - (baseElo / 2500) * 170));
+    const acplDelta = expectedAcpl - acpl; // positive means played cleaner than expected
+
+    // Combine accuracy effect and ACPL sharpness
+    const ratingAdjustment = (accuracyDelta * 22) + (acplDelta * 1.2);
+    
+    // Clamp to realistic performance window (between 400 and 3100, max swing +/- 650 from base)
+    const clampedAdjustment = Math.max(-600, Math.min(650, ratingAdjustment));
+    const performance = Math.round((baseElo + clampedAdjustment) / 10) * 10;
+    return Math.max(400, Math.min(3100, performance));
+  }
+
+  // Pure standalone performance if no base rating exists:
+  const clampedAcc = Math.max(20, Math.min(100, accuracy));
+  // Accuracy power curve
+  const accBase = 450 + Math.pow(clampedAcc / 100, 2.4) * 2350;
+  // ACPL dampening
+  const acplPenalty = Math.max(0, Math.min(650, (acpl - 25) * 3.2));
+  
+  const estimated = Math.round((accBase - acplPenalty) / 10) * 10;
+  return Math.max(400, Math.min(3000, estimated));
 }
 

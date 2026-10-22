@@ -20,7 +20,11 @@ import type { PlatformGameItem } from '../../types/chess';
 interface PlatformSyncModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectGame: (pgn: string, title?: string) => void;
+  onSelectGame: (
+    pgn: string,
+    title?: string,
+    platformAccuracies?: { white?: number; black?: number }
+  ) => void;
 }
 
 export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
@@ -258,7 +262,11 @@ export const PlatformSyncModal: React.FC<PlatformSyncModalProps> = ({
 
                         <button
                           onClick={() => {
-                            onSelectGame(g.pgn, `${g.white.username} vs ${g.black.username}`);
+                            onSelectGame(
+                              g.pgn,
+                              `${g.white.username} vs ${g.black.username}`,
+                              g.platformAccuracies
+                            );
                             onClose();
                           }}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-sm shadow-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
